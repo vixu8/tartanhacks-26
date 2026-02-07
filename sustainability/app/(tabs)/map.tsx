@@ -75,7 +75,7 @@ export default function MapScreen() {
                         params: { log: "1", preset: "12" }, // 12 = Went to sustainable event
                       });
                       }}>
-            <Text style={styles.buttonText}>Action</Text>
+            <Text style={styles.buttonText}>I went to this!</Text>
           </Pressable>
         </View>
       )}
