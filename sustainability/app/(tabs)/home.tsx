@@ -17,7 +17,7 @@ import DataList, { DataItem } from "@/components/DataList";
 
 //import DataList from "@/app/components/DataList";
 
-import { getEvents } from "@/firebase/database";
+import { subscribeToEvents } from "@/firebase/database";
 
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -88,16 +88,13 @@ export default function HomeScreen() {
   const backgroundImageSrc = "@/assets/images/tree-placeholder.png";
 
   useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const events = await getEvents();
-        setActivities(events as DataItem[]);
-      } catch (error) {
-        console.error("Error fetching activities:", error);
-      }
-    };
+    // Set up real-time listener for events
+    const unsubscribe = subscribeToEvents((events: DataItem[]) => {
+      setActivities(events);
+    });
 
-    fetchActivities();
+    // Cleanup: unsubscribe when component unmounts
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -217,7 +214,7 @@ export default function HomeScreen() {
           <View style={styles.windowTop}>
             <View style={styles.scrollIndicator} />
             <View style={styles.stickyHeader}>
-              <Text style={styles.title}>Streak Counter: 19</Text>
+              <Text style={styles.title}>Streak Counter: 0</Text>
             </View>
           </View>
 
