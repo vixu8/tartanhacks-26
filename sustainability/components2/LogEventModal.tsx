@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
   FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
+
   Text,
   TextInput,
   View
@@ -55,6 +62,9 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
 
   const toastTimer = useRef<number | null>(null);
   const [toastMessage, setToastMessage] = useState('');
+  const windowHeight = useRef(Dimensions.get('window').height).current;
+  const cardHeight = useRef(new Animated.Value(windowHeight * 0.5)).current;
+  const cardTranslateY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
@@ -62,6 +72,7 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
       setSelectedEvent(null);
       setSearchQuery('');
       setShowCustom(false);
+
 
       const preset = presetId ? DEFAULT_EVENTS.find(e => e.id === presetId) : null;
     if (preset) {
@@ -73,8 +84,45 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
       setDetailsVisible(false);
       setDetailsEventTitle("");
     }
+
+      cardHeight.setValue(windowHeight * 0.5);
+      cardTranslateY.setValue(0);
+
     }
   }, [visible]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const animateCard = (toHeight: number, toTranslateY: number) => {
+      Animated.parallel([
+        Animated.timing(cardHeight, {
+          toValue: toHeight,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.timing(cardTranslateY, {
+          toValue: toTranslateY,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ]).start();
+    };
+
+    const showSub = Keyboard.addListener(showEvent, () =>
+      animateCard(windowHeight * 0.45, 16)
+    );
+    const hideSub = Keyboard.addListener(hideEvent, () =>
+      animateCard(windowHeight * 0.5, 0)
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const filteredEvents = events.filter((event) =>
     event.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -89,7 +137,19 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
     toastTimer.current = setTimeout(() => setToastMessage(''), 2500);
   };
 
+  const resetLogEventState = () => {
+    setShowCustom(false);
+    setCustomTitle('');
+    setSelectedEvent(null);
+    setSearchQuery('');
+    setDetailsEventTitle('');
+    setDetailsVisible(false);
+  };
+
   const handleClose = () => {
+    resetLogEventState();
+    cardHeight.setValue(windowHeight * 0.5);
+    cardTranslateY.setValue(0);
     onClose();
   };
 
@@ -152,101 +212,113 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
       animationType="fade"
       onRequestClose={handleClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Log Event</Text>
-
-          <TextInput
-            style={styles.searchBar}
-            placeholder="Search events..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-
-          {loading ? (
-            <ActivityIndicator size="large" color="#22c55e" style={styles.loader} />
-          ) : (
-            <FlatList
-              data={filteredEvents}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={true}
-              style={styles.eventList}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={[
-                    styles.eventItem,
-                    selectedEvent?.id === item.id && styles.eventItemSelected,
-                  ]}
-                  onPress={() => handleSelectEvent(item)}
-                >
-                  <Text style={styles.eventTitle}>{item.title}</Text>
-                </Pressable>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoiding}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'position'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+      >
+        <View style={styles.modalOverlay}>
+          {!detailsVisible ? (
+            <Animated.View
+              style={[
+                styles.modalCard,
+                { height: cardHeight, transform: [{ translateY: cardTranslateY }] },
+              ]}
+            >
+              {/* --- your list UI exactly as before --- */}
+              <Text style={styles.modalTitle}>Log Event</Text>
+  
+              <TextInput
+                style={styles.searchBar}
+                placeholder="Search events..."
+                placeholderTextColor="#374151"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+  
+              {loading ? (
+                <ActivityIndicator size="large" color="#22c55e" style={styles.loader} />
+              ) : (
+                <FlatList
+                  data={filteredEvents}
+                  keyExtractor={(item) => item.id}
+                  style={styles.eventList}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={[
+                        styles.eventItem,
+                        selectedEvent?.id === item.id && styles.eventItemSelected,
+                      ]}
+                      onPress={() => handleSelectEvent(item)}
+                    >
+                      <Text style={styles.eventTitle}>{item.title}</Text>
+                    </Pressable>
+                  )}
+                  ListEmptyComponent={<Text style={styles.emptyText}>No events found</Text>}
+                />
               )}
-              ListEmptyComponent={
-                <Text style={styles.emptyText}>No events found</Text>
-              }
-            />
-          )}
-
-          {/* Static custom event button (same size as search bar). */}
-          {!showCustom ? (
-            <Pressable
-              style={styles.customButton}
-              onPress={() => setShowCustom(true)}
-            >
-              <Text style={styles.customButtonText}>Custom Event</Text>
-            </Pressable>
+  
+              {!showCustom ? (
+                <Pressable style={styles.customButton} onPress={() => setShowCustom(true)}>
+                  <Text style={styles.customButtonText}>Custom Event</Text>
+                </Pressable>
+              ) : (
+                <TextInput
+                  style={styles.searchBar}
+                  placeholder="Custom event title"
+                  value={customTitle}
+                  onChangeText={setCustomTitle}
+                />
+              )}
+  
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={[styles.actionButton, styles.cancelButton]}
+                  onPress={handleClose}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </Pressable>
+  
+                {showCustom && (
+                  <Pressable
+                    style={[styles.actionButton, styles.saveButton]}
+                    onPress={handleSaveCustom}
+                  >
+                    <Text style={styles.saveText}>Save</Text>
+                  </Pressable>
+                )}
+              </View>
+            </Animated.View>
           ) : (
-            <TextInput
-              style={styles.searchBar}
-              placeholder="Custom event title"
-              value={customTitle}
-              onChangeText={setCustomTitle}
+            // 👇 Render details *inside the same modal*
+            <EventDetailsModal
+              visible={true}
+              eventTitle={detailsEventTitle}
+              onClose={() => setDetailsVisible(false)}   // go back to list
+              onSaved={onSaved}
             />
           )}
-
-          <View style={styles.modalActions}>
-            <Pressable
-              style={[styles.actionButton, styles.cancelButton]}
-              onPress={() => {
-                setShowCustom(false);
-                setCustomTitle('');
-                handleClose();
-              }}
-            >
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            {showCustom && (
-              <Pressable
-                style={[styles.actionButton, styles.saveButton]}
-                onPress={handleSaveCustom}
-              >
-                <Text style={styles.saveText}>Save</Text>
-              </Pressable>
-            )}
+        </View>
+  
+        {toastMessage ? (
+          <View style={styles.toast} pointerEvents="none">
+            <Text style={styles.toastText}>{toastMessage}</Text>
           </View>
-        </View>
-      </View>
-
-      <EventDetailsModal
-        visible={detailsVisible}
-        eventTitle={detailsEventTitle}
-        onClose={() => setDetailsVisible(false)}
-        onSaved={onSaved}
-      />
-      {toastMessage ? (
-        <View style={styles.toast} pointerEvents="none">
-          <Text style={styles.toastText}>{toastMessage}</Text>
-        </View>
-      ) : null}
+        ) : null}
+      </KeyboardAvoidingView>
     </Modal>
   );
+  
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  keyboardAvoiding: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -254,7 +326,6 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 380,
-    height: '50%',
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
