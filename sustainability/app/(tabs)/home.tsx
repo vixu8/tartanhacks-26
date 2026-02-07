@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { useRef, useState, useEffect } from "react";
+import DataList from "@/components/DataList";
+import { sampleActivities } from "@/data/sampleActivities";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.7; // Threshold when outer is maxed (0.8 - 0.1)
@@ -89,16 +91,10 @@ export default function HomeScreen() {
               bounces={true}
               scrollEnabled={innerScrollEnabled}
             >
-              <Text style={styles.content}>Scroll to explore...</Text>
+              <Text style={styles.content}>Your Activity History</Text>
 
-              {/* Add placeholder content to make scrolling visible */}
-              {[...Array(20)].map((_, index) => (
-                <View key={index} style={styles.contentBlock}>
-                  <Text style={styles.contentText}>
-                    Content Block {index + 1}
-                  </Text>
-                </View>
-              ))}
+              {/* Data List */}
+              <DataList data={sampleActivities} />
             </ScrollView>
           </View>
         </View>

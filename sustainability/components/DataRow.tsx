@@ -1,20 +1,25 @@
-import { View, Text, StyleSheet } from "react-native";
+import { Text, StyleSheet, TouchableOpacity } from "react-native";
 
 interface DataRowProps {
   title: string;
   points: number;
+  onPress?: () => void;
 }
 
-export default function DataRow({ title, points }: DataRowProps) {
+export default function DataRow({ title, points, onPress }: DataRowProps) {
   const isPositive = points >= 0;
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <Text style={styles.title}>{title}</Text>
       <Text style={[styles.points, isPositive ? styles.positive : styles.negative]}>
         {isPositive ? "+" : ""}{points}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
