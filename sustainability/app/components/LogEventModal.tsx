@@ -35,6 +35,9 @@ type Event = {
   lng?: number;
 };
 
+
+
+
 const DEFAULT_EVENTS: Event[] = [
   { id: '1', title: 'Walked', description: 'Walked instead of driving.' },
   { id: '2', title: 'Biked', description: 'Biked to destination.' },
@@ -67,6 +70,9 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
   const cardHeight = useRef(new Animated.Value(windowHeight * 0.5)).current;
   const cardTranslateY = useRef(new Animated.Value(0)).current;
 
+  const [initialDraft, setInitialDraft] = useState<any>(null);
+
+
   useEffect(() => {
     if (visible) {
       console.log('[LogEventModal] visible -> true');
@@ -74,6 +80,7 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
       setSelectedEvent(null);
       setSearchQuery('');
       setShowCustom(false);
+      setInitialDraft(null);
 
 
       const preset = presetId ? DEFAULT_EVENTS.find(e => e.id === presetId) : null;
@@ -159,6 +166,7 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
     setSearchQuery('');
     setDetailsEventTitle('');
     setActiveView('list');
+    setInitialDraft(null);
   };
 
   const handleClose = () => {
@@ -172,22 +180,54 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
     setActiveView('details');
   };
 
+  const AUTOFILL_URL = "http://172.26.68.118:8080/autofill"; // <-- change to your laptop IP
+
   const handleSaveCustom = async () => {
-    const title = customTitle.trim();
-    if (!title) {
-      showToast('Please enter a custom event title.');
+    const text = customTitle.trim();
+    if (!text) {
+      showToast("Please describe what you did.");
       return;
     }
-
+  
     try {
-      setDetailsEventTitle(title);
-      setActiveView('details');
+      setLoading(true);
+  
+      const resp = await fetch(AUTOFILL_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, timezone: "America/New_York" }),
+      });
+  
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data?.error ?? "AI autofill failed");
+  
+      setInitialDraft({
+        title: data.title ?? text,
+        date: data.date,
+        time: data.time,
+        meridiem: data.meridiem,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        notes: data.notes ?? "",
+      });
+  
+      setDetailsEventTitle(data.title ?? text);
+      setActiveView("details");     // ✅ THIS replaces setDetailsVisible(true)
+  
       setShowCustom(false);
-      setCustomTitle('');
-    } catch (error) {
-      showToast('Could not open event details.');
+      setCustomTitle("");
+    } catch (e: any) {
+      setInitialDraft({ title: text, notes: "" });
+      setDetailsEventTitle(text);
+      setActiveView("details");     // ✅ fallback goes to details too
+  
+      setShowCustom(false);
+      setCustomTitle("");
+      showToast(e?.message ?? "AI autofill failed — opened manual form");
+    } finally {
+      setLoading(false);
     }
   };
+  
 
   return (
     <Modal
@@ -249,7 +289,7 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
               ) : (
                 <TextInput
                   style={styles.searchBar}
-                  placeholder="Custom event title"
+                  placeholder="What did you do?"
                   value={customTitle}
                   onChangeText={setCustomTitle}
                 />
@@ -280,6 +320,7 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
               eventTitle={detailsEventTitle}
               onClose={handleClose}
               onSaved={onSaved}
+              initialDraft={initialDraft}
             />
           )}
         </View>

@@ -20,7 +20,9 @@ import { treeStageToImage } from "@/lib/ui/treeImages";
 
 //import DataList from "@/app/components/DataList";
 
-import { sampleActivities } from "@/data/sampleActivities";
+import { subscribeToEvents } from "@/firebase/database";
+import { DataItem } from "../components/DataList";
+
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -85,6 +87,7 @@ export default function HomeScreen() {
   const [expanded, setExpanded] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [treeStage, setTreeStage] = useState<TreeStage>(2);
+  const [activities, setActivities] = useState<DataItem[]>([]);
 
   const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.7;
   const treeImagePath = treeStageToImage(treeStage);
@@ -120,6 +123,16 @@ export default function HomeScreen() {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    // Set up real-time listener for events
+    const unsubscribe = subscribeToEvents((events: DataItem[]) => {
+      setActivities(events);
+    });
+
+    // Cleanup: unsubscribe when component unmounts
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -188,7 +201,7 @@ export default function HomeScreen() {
             onPress={() => setExpanded((e) => !e)}
           >
             <View style={styles.factHeader}>
-              <Text style={styles.factTitle}>🌱 Eco Tip</Text>
+              <Text style={styles.factTitle}>Eco Tip</Text>
               <Pressable 
                 onPress={handleMinimize}
                 style={styles.minimizeButton}
@@ -239,7 +252,7 @@ export default function HomeScreen() {
           <View style={styles.windowTop}>
             <View style={styles.scrollIndicator} />
             <View style={styles.stickyHeader}>
-              <Text style={styles.title}>Streak Counter: 1=9</Text>
+              <Text style={styles.title}>Streak Counter: 0</Text>
             </View>
           </View>
 
@@ -252,7 +265,7 @@ export default function HomeScreen() {
               nestedScrollEnabled={innerScrollEnabled}
             >
               <Text style={styles.content}>Your Activity History</Text>
-              <DataList data={sampleActivities} />
+              <DataList data={activities} />
             </ScrollView>
           </View>
         </View>
@@ -262,51 +275,89 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  backgroundImage: { position: "absolute", width: "100%", height: "100%" },
-  blurContainer: { ...StyleSheet.absoluteFillObject },
-  scrollView: { flex: 1 },
+  container: { 
+    flex: 1,
+    backgroundColor: '#E8F5E9',
+  },
+  backgroundImage: { 
+    position: "absolute", 
+    width: "100%", 
+    height: "100%",
+  },
+  blurContainer: { 
+    ...StyleSheet.absoluteFillObject,
+  },
+  scrollView: { 
+    flex: 1,
+  },
   scrollContent: {
     paddingTop: SCREEN_HEIGHT * 0.8,
     paddingBottom: SCREEN_HEIGHT * 0.15,
     paddingHorizontal: "5%",
   },
-  windowContainer: { maxHeight: SCREEN_HEIGHT * 0.7 },
+  windowContainer: { 
+    maxHeight: SCREEN_HEIGHT * 0.7,
+  },
   windowTop: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     paddingTop: 5,
-    shadowColor: "#000",
+    shadowColor: "#43A047",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    borderColor: '#C8E6C9',
   },
   window: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: "#FFFFFF",
     padding: 20,
     height: SCREEN_HEIGHT * 0.8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
+    shadowColor: "#43A047",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    borderBottomWidth: 2,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    borderColor: '#C8E6C9',
   },
-  innerScrollView: { maxHeight: "90%", flex: 1 },
+  innerScrollView: { 
+    maxHeight: "90%", 
+    flex: 1,
+  },
   scrollIndicator: {
     width: 40,
     height: 5,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
+    backgroundColor: "#C8E6C9",
     borderRadius: 2.5,
     alignSelf: "center",
     marginTop: 8,
     marginBottom: 16,
   },
-  stickyHeader: { backgroundColor: "rgba(255, 255, 255, 0.95)", paddingBottom: 8 },
-  title: { fontSize: 32, fontWeight: "bold" },
-  content: { fontSize: 16, color: "#666", marginBottom: 20 },
+  stickyHeader: { 
+    backgroundColor: "#FFFFFF", 
+    paddingBottom: 8,
+  },
+  title: { 
+    fontSize: 32, 
+    fontWeight: "bold",
+    color: '#2E7D32',
+  },
+  content: { 
+    fontSize: 16, 
+    color: "#66BB6A", 
+    marginBottom: 20,
+    fontWeight: '600',
+  },
 
   factContainer: {
     position: "absolute",
@@ -317,45 +368,68 @@ const styles = StyleSheet.create({
   },
   factBubble: {
     backgroundColor: "white",
-    padding: 14,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
+    padding: 16,
+    borderRadius: 20,
+    shadowColor: "#43A047",
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
   },
   factBubbleExpanded: {
-    paddingBottom: 18,
+    paddingBottom: 20,
   },
   factHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   factTitle: { 
-    color: "#1B5E20", 
+    color: "#2E7D32", 
     fontWeight: "700",
+    fontSize: 16,
   },
   minimizeButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(27, 94, 32, 0.1)',
+    backgroundColor: '#F1F8E9',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
   },
   minimizeIcon: {
-    color: '#1B5E20',
+    color: '#43A047',
     fontSize: 20,
     fontWeight: 'bold',
     lineHeight: 20,
   },
-  factText: { color: "#2E7D32", fontWeight: "600" },
-  factMore: { color: "#388E3C", marginTop: 6 },
-  factCTA: { color: "#1B5E20", marginTop: 6, fontWeight: "600" },
-  factLink: { color: "#43A047", marginTop: 6, textDecorationLine: "underline" },
+  factText: { 
+    color: "#2E7D32", 
+    fontWeight: "600",
+    lineHeight: 20,
+  },
+  factMore: { 
+    color: "#66BB6A", 
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  factCTA: { 
+    color: "#2E7D32", 
+    marginTop: 8, 
+    fontWeight: "600",
+    lineHeight: 20,
+  },
+  factLink: { 
+    color: "#43A047", 
+    marginTop: 8, 
+    textDecorationLine: "underline",
+    fontWeight: '600',
+  },
 
   leafContainer: {
     position: 'absolute',
@@ -370,10 +444,12 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
+    shadowColor: "#43A047",
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
   },
 });
