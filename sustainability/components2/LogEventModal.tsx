@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -9,8 +9,15 @@ import {
   Alert,
   FlatList,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  Animated,
+  Easing,
+  Dimensions,
 } from 'react-native';
 import { addEvent } from '../firebase/database';
+import EventDetailsModal from './EventDetailsModal';
 
 type LogEventModalProps = {
   visible: boolean;
@@ -27,43 +34,20 @@ type Event = {
 };
 
 const DEFAULT_EVENTS: Event[] = [
-  {
-    id: '1',
-    title: 'Walked',
-    description: 'Walked instead of driving.',
-  },
-  {
-    id: '2',
-    title: 'Biked',
-    description: 'Biked to destination.',
-  },
-  {
-    id: '3',
-    title: 'Drove',
-    description: 'Drove to location.',
-  },
-  {
-    id: '4',
-    title: 'Thrifted',
-    description: 'Bought secondhand items.',
-  },
-  {
-    id: '5',
-    title: 'Ate plant-based',
-    description: 'Chose plant-based meal option.',
-  },
-  {
-    id: '6',
-    title: 'Recycled',
-    description: 'Properly recycled materials.',
-  },
+  { id: '1', title: 'Walked', description: 'Walked instead of driving.' },
+  { id: '2', title: 'Biked', description: 'Biked to destination.' },
+  { id: '3', title: 'Drove', description: 'Drove to location.' },
+  { id: '4', title: 'Thrifted', description: 'Bought secondhand items.' },
+  { id: '5', title: 'Ate plant-based', description: 'Chose plant-based meal option.' },
+  { id: '6', title: 'Recycled', description: 'Properly recycled materials.' },
+  { id: '7', title: 'Compostable product', description: 'Used or purchased compostable products.' },
+  { id: '8', title: 'Lights off', description: 'Turned off lights when not in use.' },
+  { id: '9', title: 'Tap off while brushing', description: 'Turned off tap while brushing teeth.' },
+  { id: '10', title: 'Refill bottle', description: 'Refilled reusable water bottle.' },
+  { id: '11', title: 'No AI usage', description: 'Completed task without using AI.' },
 ];
 
-export default function LogEventModal({
-  visible,
-  onClose,
-  onSaved,
-}: LogEventModalProps) {
+export default function LogEventModal({ visible, onClose, onSaved }: LogEventModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [events, setEvents] = useState<Event[]>(DEFAULT_EVENTS);
   const [loading, setLoading] = useState(false);
@@ -71,146 +55,259 @@ export default function LogEventModal({
   const [showCustom, setShowCustom] = useState(false);
   const [customTitle, setCustomTitle] = useState('');
 
+  const [detailsVisible, setDetailsVisible] = useState(false);
+  const [detailsEventTitle, setDetailsEventTitle] = useState('');
+
+  const toastTimer = useRef<number | null>(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const windowHeight = useRef(Dimensions.get('window').height).current;
+  const cardHeight = useRef(new Animated.Value(windowHeight * 0.5)).current;
+  const cardTranslateY = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     if (visible) {
-      setEvents(DEFAULT_EVENTS);
+      setEvents((prev) => (prev.length ? prev : DEFAULT_EVENTS));
       setSelectedEvent(null);
       setSearchQuery('');
+      setShowCustom(false);
+      cardHeight.setValue(windowHeight * 0.5);
+      cardTranslateY.setValue(0);
     }
   }, [visible]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const animateCard = (toHeight: number, toTranslateY: number) => {
+      Animated.parallel([
+        Animated.timing(cardHeight, {
+          toValue: toHeight,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.timing(cardTranslateY, {
+          toValue: toTranslateY,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ]).start();
+    };
+
+    const showSub = Keyboard.addListener(showEvent, () =>
+      animateCard(windowHeight * 0.45, 16)
+    );
+    const hideSub = Keyboard.addListener(hideEvent, () =>
+      animateCard(windowHeight * 0.5, 0)
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const filteredEvents = events.filter((event) =>
     event.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    if (toastTimer.current) {
+      clearTimeout(toastTimer.current as unknown as number);
+    }
+    // @ts-ignore
+    toastTimer.current = setTimeout(() => setToastMessage(''), 2500);
+  };
+
+  const resetLogEventState = () => {
+    setShowCustom(false);
+    setCustomTitle('');
+    setSelectedEvent(null);
+    setSearchQuery('');
+    setDetailsEventTitle('');
+    setDetailsVisible(false);
+  };
+
   const handleClose = () => {
+    resetLogEventState();
+    cardHeight.setValue(windowHeight * 0.5);
+    cardTranslateY.setValue(0);
     onClose();
   };
 
-  const handleSelectEvent = async (event: Event) => {
-    try {
-      setSelectedEvent(event);
-      onClose();
-      onSaved?.();
-      Alert.alert('Logged', `Event "${event.title}" logged successfully.`);
-    } catch (error) {
-      Alert.alert('Error', 'Could not log event. Please try again.');
-    }
+  const handleSelectEvent = (event: Event) => {
+    setSelectedEvent(event);
+    setDetailsEventTitle(event.title || '');
+    setDetailsVisible(true);
   };
 
   const handleSaveCustom = async () => {
     const title = customTitle.trim();
     if (!title) {
-      Alert.alert('Missing info', 'Please enter a custom event title.');
+      showToast('Please enter a custom event title.');
       return;
     }
 
     try {
-      // Persist custom event to Firebase and add to local list
-      const docId = await addEvent({ title, description: '', lat: 0, lng: 0 });
-      const newEvent: Event = { id: docId, title };
-      setEvents((prev) => [newEvent, ...prev]);
-      setSelectedEvent(newEvent);
+      setDetailsEventTitle(title);
+      setDetailsVisible(true);
       setShowCustom(false);
       setCustomTitle('');
+    } catch (error) {
+      showToast('Could not open event details.');
+    }
+  };
+
+  const handleSaveDetails = async () => {
+    const title = detailsEventTitle.trim();
+    if (!title) {
+      showToast('Please enter a title for the event.');
+      return;
+    }
+
+    try {
+      const payload: any = {
+        title,
+        description: '',
+        tags: [],
+      };
+      payload.lat = selectedEvent?.lat ?? 0;
+      payload.lng = selectedEvent?.lng ?? 0;
+
+      const docId = await addEvent(payload);
+      const newEvent: Event = { id: docId, title };
+      setEvents((prev) => [newEvent, ...prev]);
+      setDetailsVisible(false);
+      setSelectedEvent(newEvent);
+      showToast('Event saved');
       onClose();
       onSaved?.();
-      Alert.alert('Logged', `Event "${title}" logged successfully.`);
     } catch (error) {
-      Alert.alert('Error', 'Could not log custom event.');
+      showToast('Could not save event.');
     }
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={handleClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Log Event</Text>
+    <>
+      <Modal
+        visible={visible && !detailsVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleClose}
+      >
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoiding}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'position'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+        >
+        <View style={styles.modalOverlay}>
+          <Animated.View
+            style={[
+              styles.modalCard,
+              { height: cardHeight, transform: [{ translateY: cardTranslateY }] },
+            ]}
+          >
+            <Text style={styles.modalTitle}>Log Event</Text>
 
-          <TextInput
-            style={styles.searchBar}
-            placeholder="Search events..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-
-          {loading ? (
-            <ActivityIndicator size="large" color="#22c55e" style={styles.loader} />
-          ) : (
-            <FlatList
-              data={filteredEvents}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={true}
-              style={styles.eventList}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={[
-                    styles.eventItem,
-                    selectedEvent?.id === item.id && styles.eventItemSelected,
-                  ]}
-                  onPress={() => handleSelectEvent(item)}
-                >
-                  <Text style={styles.eventTitle}>{item.title}</Text>
-                </Pressable>
-              )}
-              ListEmptyComponent={
-                <Text style={styles.emptyText}>No events found</Text>
-              }
-            />
-          )}
-
-          {/* Static custom event button (same size as search bar). */}
-          {!showCustom ? (
-            <Pressable
-              style={styles.customButton}
-              onPress={() => setShowCustom(true)}
-            >
-              <Text style={styles.customButtonText}>Custom Event</Text>
-            </Pressable>
-          ) : (
             <TextInput
               style={styles.searchBar}
-              placeholder="Custom event title"
-              value={customTitle}
-              onChangeText={setCustomTitle}
+              placeholder="Search events..."
+              placeholderTextColor="#374151"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
-          )}
 
-          <View style={styles.modalActions}>
-            <Pressable
-              style={[styles.actionButton, styles.cancelButton]}
-              onPress={() => {
-                setShowCustom(false);
-                setCustomTitle('');
-                handleClose();
-              }}
-            >
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            {showCustom && (
-              <Pressable
-                style={[styles.actionButton, styles.saveButton]}
-                onPress={handleSaveCustom}
-              >
-                <Text style={styles.saveText}>Save</Text>
-              </Pressable>
+            {loading ? (
+              <ActivityIndicator size="large" color="#22c55e" style={styles.loader} />
+            ) : (
+              <FlatList
+                data={filteredEvents}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={true}
+                style={styles.eventList}
+                renderItem={({ item }) => (
+                  <Pressable
+                    style={[
+                      styles.eventItem,
+                      selectedEvent?.id === item.id && styles.eventItemSelected,
+                    ]}
+                    onPress={() => handleSelectEvent(item)}
+                  >
+                    <Text style={styles.eventTitle}>{item.title}</Text>
+                  </Pressable>
+                )}
+                ListEmptyComponent={
+                  <Text style={styles.emptyText}>No events found</Text>
+                }
+              />
             )}
-          </View>
+
+            {/* Static custom event button (same size as search bar). */}
+            {!showCustom ? (
+              <Pressable
+                style={styles.customButton}
+                onPress={() => setShowCustom(true)}
+              >
+                <Text style={styles.customButtonText}>Custom Event</Text>
+              </Pressable>
+            ) : (
+              <TextInput
+                style={styles.searchBar}
+                placeholder="Custom event title"
+                value={customTitle}
+                onChangeText={setCustomTitle}
+              />
+            )}
+
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[styles.actionButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowCustom(false);
+                  setCustomTitle('');
+                  handleClose();
+                }}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+              {showCustom && (
+                <Pressable
+                  style={[styles.actionButton, styles.saveButton]}
+                  onPress={handleSaveCustom}
+                >
+                  <Text style={styles.saveText}>Save</Text>
+                </Pressable>
+              )}
+            </View>
+          </Animated.View>
         </View>
-      </View>
-    </Modal>
+        </KeyboardAvoidingView>
+      </Modal>
+      <EventDetailsModal
+        visible={visible && detailsVisible}
+        eventTitle={detailsEventTitle}
+        onClose={handleClose}
+        onSaved={onSaved}
+      />
+      {visible && !detailsVisible && toastMessage ? (
+        <View style={styles.toast} pointerEvents="none">
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </View>
+      ) : null}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  keyboardAvoiding: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -218,7 +315,6 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 380,
-    height: '50%',
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
@@ -274,6 +370,71 @@ const styles = StyleSheet.create({
   customButtonText: {
     fontSize: 16,
     fontWeight: '600',
+    color: 'white',
+  },
+  detailsContainer: {
+    flex: 1,
+    marginBottom: 12,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  halfInput: {
+    flex: 1,
+  },
+  tagDropdown: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    marginTop: 6,
+    maxHeight: 120,
+  },
+  tagRow: {
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  tagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  tagText: {
+    marginRight: 6,
+  },
+  tagRemove: {
+    color: '#6b7280',
+    fontWeight: '600',
+  },
+  notesInput: {
+    minHeight: 72,
+    textAlignVertical: 'top',
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 40,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  toastText: {
     color: 'white',
   },
   emptyText: {
