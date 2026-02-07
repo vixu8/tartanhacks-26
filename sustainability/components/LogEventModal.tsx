@@ -16,8 +16,10 @@ import {
   TextInput,
   View
 } from 'react-native';
-
-
+<<<<<<<< HEAD:sustainability/components/LogEventModal.tsx
+========
+import { addEvent } from '../../firebase/database';
+>>>>>>>> main:sustainability/app/components/LogEventModal.tsx
 import EventDetailsModal from './EventDetailsModal';
 
 type LogEventModalProps = {
