@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Tabs } from 'expo-router';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import LogEventModal from '../../components/LogEventModal';
+import LogEventModal from '../../components2/LogEventModal';
 
 function CustomTabBar({ state, descriptors, navigation, onPlusPress }: any) {
   return (

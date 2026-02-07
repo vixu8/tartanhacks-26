@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { useRef, useState, useEffect } from "react";
-import DataList from "@/components/DataList";
+import DataList from "@/components2/DataList";
 import { sampleActivities } from "@/data/sampleActivities";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
