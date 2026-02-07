@@ -34,6 +34,11 @@ const DEFAULT_EVENTS: Event[] = [
   { id: '4', title: 'Thrifted', description: 'Bought secondhand items.' },
   { id: '5', title: 'Ate plant-based', description: 'Chose plant-based meal option.' },
   { id: '6', title: 'Recycled', description: 'Properly recycled materials.' },
+  { id: '7', title: 'Compostable product', description: 'Used or purchased compostable products.' },
+  { id: '8', title: 'Lights off', description: 'Turned off lights when not in use.' },
+  { id: '9', title: 'Tap off while brushing', description: 'Turned off tap while brushing teeth.' },
+  { id: '10', title: 'Refill bottle', description: 'Refilled reusable water bottle.' },
+  { id: '11', title: 'No AI usage', description: 'Completed task without using AI.' },
 ];
 
 export default function LogEventModal({ visible, onClose, onSaved }: LogEventModalProps) {

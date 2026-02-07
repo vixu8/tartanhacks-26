@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import { addEvent } from '../firebase/database';
 
 type EventDetailsModalProps = {
@@ -41,9 +42,11 @@ export default function EventDetailsModal({
   }, [visible, eventTitle]);
   const [detailDate, setDetailDate] = useState('');
   const [detailTime, setDetailTime] = useState('');
+  const [meridiem, setMeridiem] = useState<'AM' | 'PM'>('AM');
   const [detailNotes, setDetailNotes] = useState('');
   const [detailTags, setDetailTags] = useState<string[]>([]);
   const [tagQuery, setTagQuery] = useState('');
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const toastTimer = useRef<number | null>(null);
   const [toastMessage, setToastMessage] = useState('');
@@ -55,6 +58,42 @@ export default function EventDetailsModal({
     }
     // @ts-ignore
     toastTimer.current = setTimeout(() => setToastMessage(''), 2500);
+  };
+
+  const handleTimeChange = (input: string) => {
+    // Remove any non-digit characters
+    const digitsOnly = input.replace(/\D/g, '');
+    
+    // Limit to 4 digits
+    if (digitsOnly.length > 4) {
+      return;
+    }
+
+    // Format as HH:MM
+    let formatted = digitsOnly;
+    if (digitsOnly.length >= 2) {
+      const hours = digitsOnly.slice(0, 2);
+      const minutes = digitsOnly.slice(2, 4);
+      
+      // Validate hours (01-12 for 12-hour format)
+      const hoursNum = parseInt(hours);
+      if (hoursNum === 0 || hoursNum > 12) {
+        return;
+      }
+      
+      // Validate minutes (00-59) if present
+      if (minutes.length > 0) {
+        const minutesNum = parseInt(minutes);
+        if (minutesNum > 59) {
+          return;
+        }
+        formatted = `${hours}:${minutes}`;
+      } else {
+        formatted = hours;
+      }
+    }
+    
+    setDetailTime(formatted);
   };
 
   const handleSave = async () => {
@@ -71,7 +110,7 @@ export default function EventDetailsModal({
         tags: detailTags,
       };
       if (detailDate) payload.date = detailDate;
-      if (detailTime) payload.time = detailTime;
+      if (detailTime) payload.time = `${detailTime} ${meridiem}`;
       payload.lat = 0;
       payload.lng = 0;
 
@@ -97,11 +136,24 @@ export default function EventDetailsModal({
             <View style={styles.row}>
               <View style={styles.halfColumn}>
                 <Text style={styles.label}>Date</Text>
-                <TextInput style={[styles.input, styles.halfInput]} placeholder="YYYY-MM-DD" placeholderTextColor="#9ca3af" value={detailDate} onChangeText={setDetailDate} />
+                <Pressable 
+                  style={[styles.input, styles.halfInput, styles.dateButton]}
+                  onPress={() => setShowCalendar(true)}
+                >
+                  <Text style={[styles.dateButtonText, { color: detailDate ? '#111827' : '#9ca3af' }]}>{detailDate || 'Select date'}</Text>
+                </Pressable>
               </View>
               <View style={styles.halfColumn}>
                 <Text style={styles.label}>Time</Text>
-                <TextInput style={[styles.input, styles.halfInput]} placeholder="HH:MM" placeholderTextColor="#9ca3af" value={detailTime} onChangeText={setDetailTime} />
+                <View style={styles.timeRow}>
+                  <TextInput style={[styles.input, styles.timeInput]} placeholder="HH:MM" placeholderTextColor="#9ca3af" value={detailTime} onChangeText={handleTimeChange} keyboardType="decimal-pad" maxLength={5} />
+                  <Pressable 
+                    style={styles.meridiemButton}
+                    onPress={() => setMeridiem(meridiem === 'AM' ? 'PM' : 'AM')}
+                  >
+                    <Text style={styles.meridiemText}>{meridiem}</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
 
@@ -175,6 +227,32 @@ export default function EventDetailsModal({
           <Text style={styles.toastText}>{toastMessage}</Text>
         </View>
       ) : null}
+
+      <Modal visible={showCalendar} transparent animationType="fade" onRequestClose={() => setShowCalendar(false)}>
+        <View style={styles.calendarOverlay}>
+          <View style={styles.calendarModal}>
+            <Calendar
+              onDayPress={(day) => {
+                setDetailDate(day.dateString);
+                setShowCalendar(false);
+              }}
+              markedDates={detailDate ? { [detailDate]: { selected: true, selectedColor: '#22c55e' } } : {}}
+              theme={{
+                selectedDayBackgroundColor: '#22c55e',
+                selectedDayTextColor: '#fff',
+                todayTextColor: '#22c55e',
+                arrowColor: '#22c55e',
+              }}
+            />
+            <Pressable 
+              style={styles.calendarCloseButton}
+              onPress={() => setShowCalendar(false)}
+            >
+              <Text style={styles.calendarCloseText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </Modal>
   );
 }
@@ -214,6 +292,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#111827',
     placeholderTextColor: '#1f2937',
+    minHeight: 44,
   },
   row: {
     flexDirection: 'row',
@@ -225,6 +304,69 @@ const styles = StyleSheet.create({
   },
   halfInput: {
     flex: 1,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  timeInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  meridiemButton: {
+    backgroundColor: '#e5e7eb',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 44,
+  },
+  meridiemText: {
+    color: '#374151',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  dateButton: {
+    justifyContent: 'center',
+  },
+  dateButtonText: {
+    fontSize: 16,
+  },
+  calendarContainer: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  calendarOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  calendarModal: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    width: '100%',
+    maxWidth: 380,
+  },
+  calendarCloseButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  calendarCloseText: {
+    fontWeight: '600',
+    color: '#374151',
   },
   label: {
     fontSize: 13,

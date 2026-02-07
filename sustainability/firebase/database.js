@@ -68,6 +68,41 @@ export const seedFakeEvents = async () => {
       lng: -79.944,
       tags: ["recycling"],
     },
+    {
+      title: "Compostable product",
+      description: "Used or purchased compostable products.",
+      lat: 40.440,
+      lng: -79.946,
+      tags: ["shopping"],
+    },
+    {
+      title: "Lights off",
+      description: "Turned off lights when not in use.",
+      lat: 40.445,
+      lng: -79.949,
+      tags: ["energy"],
+    },
+    {
+      title: "Tap off while brushing",
+      description: "Turned off tap while brushing teeth.",
+      lat: 40.442,
+      lng: -79.947,
+      tags: ["water"],
+    },
+    {
+      title: "Refill bottle",
+      description: "Refilled reusable water bottle.",
+      lat: 40.446,
+      lng: -79.943,
+      tags: ["shopping"],
+    },
+    {
+      title: "No AI usage",
+      description: "Completed task without using AI.",
+      lat: 40.443,
+      lng: -79.951,
+      tags: ["community"],
+    },
   ];
 
   // Add them sequentially (simple + safe)
