@@ -38,7 +38,7 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} initialRegion={initialRegion}>
+      <MapView style={styles.map} initialRegion={initialRegion}> 
         {visiblePins.map((p) => (
           <Marker
           key={p.id}
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    elevation: 10,
   },
   
   labelText: {
