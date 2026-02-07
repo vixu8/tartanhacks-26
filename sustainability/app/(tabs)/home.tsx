@@ -214,7 +214,7 @@ export default function HomeScreen() {
           <View style={styles.windowTop}>
             <View style={styles.scrollIndicator} />
             <View style={styles.stickyHeader}>
-              <Text style={styles.title}>Streak Counter: 19</Text>
+              <Text style={styles.title}>Streak Counter: 0</Text>
             </View>
           </View>
 
