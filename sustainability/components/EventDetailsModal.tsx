@@ -234,13 +234,12 @@ export default function EventDetailsModal({
     try {
       const payload: any = {
         title,
+        points: 0, // Default points value
         description: detailNotes || '',
-        tags: detailTags,
+        time: detailTime,
+        tags: detailTags
       };
       if (detailDate) payload.date = detailDate;
-      if (detailTime) payload.time = `${detailTime} ${meridiem}`;
-      payload.lat = 0;
-      payload.lng = 0;
 
       await addEvent(payload);
       showToast('Event saved');
