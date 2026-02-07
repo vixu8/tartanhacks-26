@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from "react-native";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import DataRow from "./DataRow";
 
 export interface DataItem {
@@ -19,6 +19,23 @@ interface DataListProps {
 export default function DataList({ data }: DataListProps) {
   const [selectedItem, setSelectedItem] = useState<DataItem | null>(null);
 
+  // Sort data by date and time, most recent first
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      // If both items have date and time, compare them
+      if (a.date && a.time && b.date && b.time) {
+        const dateTimeA = new Date(`${a.date} ${a.time}`);
+        const dateTimeB = new Date(`${b.date} ${b.time}`);
+        return dateTimeB.getTime() - dateTimeA.getTime(); // Descending order (most recent first)
+      }
+      // If only one has date/time, prioritize the one with date/time
+      if (a.date && a.time) return -1;
+      if (b.date && b.time) return 1;
+      // If both missing date/time, maintain original order
+      return 0;
+    });
+  }, [data]);
+
   const handleRowPress = (item: DataItem) => {
     setSelectedItem(item);
   };
@@ -30,7 +47,7 @@ export default function DataList({ data }: DataListProps) {
   return (
     <View style={styles.container}>
       {/* List of Data Rows */}
-      {data.map((item) => (
+      {sortedData.map((item) => (
         <DataRow
           key={item.id}
           title={item.title}
