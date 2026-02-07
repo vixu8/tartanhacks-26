@@ -16,7 +16,6 @@ import {
   TextInput,
   View
 } from 'react-native';
-import { addEvent } from '../firebase/database';
 import EventDetailsModal from './EventDetailsModal';
 
 type LogEventModalProps = {
@@ -57,7 +56,7 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
   const [showCustom, setShowCustom] = useState(false);
   const [customTitle, setCustomTitle] = useState('');
 
-  const [detailsVisible, setDetailsVisible] = useState(false);
+  const [activeView, setActiveView] = useState<'list' | 'details'>('list');
   const [detailsEventTitle, setDetailsEventTitle] = useState('');
 
   const toastTimer = useRef<number | null>(null);
@@ -68,6 +67,7 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
 
   useEffect(() => {
     if (visible) {
+      console.log('[LogEventModal] visible -> true');
       setEvents((prev) => (prev.length ? prev : DEFAULT_EVENTS));
       setSelectedEvent(null);
       setSearchQuery('');
@@ -78,10 +78,10 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
     if (preset) {
       setSelectedEvent(preset);
       setDetailsEventTitle(preset.title || "");
-      setDetailsVisible(true); // auto open details
+      setActiveView('details');
     } else {
       setSelectedEvent(null);
-      setDetailsVisible(false);
+      setActiveView('list');
       setDetailsEventTitle("");
     }
 
@@ -90,6 +90,19 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
 
     }
   }, [visible]);
+
+  useEffect(() => {
+    if (!visible) {
+      console.log('[LogEventModal] visible -> false');
+      resetLogEventState();
+      cardHeight.setValue(windowHeight * 0.5);
+      cardTranslateY.setValue(0);
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    console.log('[LogEventModal] activeView ->', activeView);
+  }, [activeView]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -143,20 +156,18 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
     setSelectedEvent(null);
     setSearchQuery('');
     setDetailsEventTitle('');
-    setDetailsVisible(false);
+    setActiveView('list');
   };
 
   const handleClose = () => {
-    resetLogEventState();
-    cardHeight.setValue(windowHeight * 0.5);
-    cardTranslateY.setValue(0);
+    console.log('[LogEventModal] handleClose');
     onClose();
   };
 
   const handleSelectEvent = (event: Event) => {
     setSelectedEvent(event);
     setDetailsEventTitle(event.title || '');
-    setDetailsVisible(true);
+    setActiveView('details');
   };
 
   const handleSaveCustom = async () => {
@@ -168,40 +179,11 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
 
     try {
       setDetailsEventTitle(title);
-      setDetailsVisible(true);
+      setActiveView('details');
       setShowCustom(false);
       setCustomTitle('');
     } catch (error) {
       showToast('Could not open event details.');
-    }
-  };
-
-  const handleSaveDetails = async () => {
-    const title = detailsEventTitle.trim();
-    if (!title) {
-      showToast('Please enter a title for the event.');
-      return;
-    }
-
-    try {
-      const payload: any = {
-        title,
-        description: '',
-        tags: [],
-      };
-      payload.lat = selectedEvent?.lat ?? 0;
-      payload.lng = selectedEvent?.lng ?? 0;
-
-      const docId = await addEvent(payload);
-      const newEvent: Event = { id: docId, title };
-      setEvents((prev) => [newEvent, ...prev]);
-      setDetailsVisible(false);
-      setSelectedEvent(newEvent);
-      showToast('Event saved');
-      onClose();
-      onSaved?.();
-    } catch (error) {
-      showToast('Could not save event.');
     }
   };
 
@@ -218,7 +200,7 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
         keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
       >
         <View style={styles.modalOverlay}>
-          {!detailsVisible ? (
+          {activeView === 'list' ? (
             <Animated.View
               style={[
                 styles.modalCard,
@@ -292,9 +274,9 @@ export default function LogEventModal({ visible, onClose, onSaved, presetId }: L
           ) : (
             // 👇 Render details *inside the same modal*
             <EventDetailsModal
-              visible={true}
+              visible={activeView === 'details'}
               eventTitle={detailsEventTitle}
-              onClose={() => setDetailsVisible(false)}   // go back to list
+              onClose={handleClose}
               onSaved={onSaved}
             />
           )}
@@ -471,6 +453,13 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: '#111827',
+    fontWeight: '600',
+  },
+  saveButton: {
+    backgroundColor: '#22c55e',
+  },
+  saveText: {
+    color: 'white',
     fontWeight: '600',
   },
 });
