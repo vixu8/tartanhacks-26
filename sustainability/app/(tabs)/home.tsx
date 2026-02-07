@@ -1,15 +1,19 @@
+import { BlurView } from "expo-blur";
+import { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   Animated,
   Dimensions,
   ImageBackground,
   ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { BlurView } from "expo-blur";
-import { useRef, useState, useEffect } from "react";
+
 import DataList from "@/components/DataList";
+
+//import DataList from "@/app/components/DataList";
+
 import { sampleActivities } from "@/data/sampleActivities";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");

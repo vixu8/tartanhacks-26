@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 
+
 import { Tabs, useGlobalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import LogEventModal from '@/components/LogEventModal';
+
 
 
 
@@ -11,6 +12,9 @@ import LogEventModal from '@/components/LogEventModal';
 
 
 const router = useRouter();
+
+import LogEventModal from '../components/LogEventModal';
+
 
 function CustomTabBar({ state, descriptors, navigation, onPlusPress }: any) {
   return (
