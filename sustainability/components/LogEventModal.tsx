@@ -96,7 +96,7 @@ export default function LogEventModal({ visible, onClose, onSaved }: LogEventMod
     };
 
     const showSub = Keyboard.addListener(showEvent, () =>
-      animateCard(windowHeight * 0.45, -24)
+      animateCard(windowHeight * 0.45, 16)
     );
     const hideSub = Keyboard.addListener(hideEvent, () =>
       animateCard(windowHeight * 0.5, 0)
