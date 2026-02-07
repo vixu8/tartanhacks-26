@@ -85,6 +85,28 @@ export default function DataList({ data }: DataListProps) {
                   </View>
                 )}
 
+                {/* Time */}
+                {selectedItem.time && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Time:</Text>
+                    <Text style={styles.detailValue}>{selectedItem.time}</Text>
+                  </View>
+                )}
+
+                {/* Tags */}
+                {selectedItem.tags && selectedItem.tags.length > 0 && (
+                  <View style={styles.tagsContainer}>
+                    <Text style={styles.detailLabel}>Tags:</Text>
+                    <View style={styles.tagsWrapper}>
+                      {selectedItem.tags.map((tag, index) => (
+                        <View key={index} style={styles.tagPill}>
+                          <Text style={styles.tagText}>{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
                 {/* Description */}
                 {selectedItem.description && (
                   <View style={styles.descriptionContainer}>
@@ -207,5 +229,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     lineHeight: 24,
+  },
+  tagsContainer: {
+    marginBottom: 16,
+  },
+  tagsWrapper: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 8,
+  },
+  tagPill: {
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  tagText: {
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "500",
   },
 });
