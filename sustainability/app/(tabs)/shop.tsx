@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal } from 'react-native';
 import { useEffect, useState } from 'react';
 import { addCoins, getCoinCount } from '@/firebase/database';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -9,8 +9,9 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface ShopItem {
   id: string;
   name: string;
-  image: any;
+  icon: string;
   cost: number;
+  description: string;
 }
 
 interface ShopSection {
@@ -23,7 +24,7 @@ export default function ShopScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentCoins, setCurrentCoins] = useState(0);
 
-    useEffect(() => {
+  useEffect(() => {
     // Subscribe to real-time updates
     const docRef = doc(db, "game", "coins");
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
@@ -49,8 +50,7 @@ export default function ShopScreen() {
     if (selectedItem) {
       // Handle purchase logic here
       console.log(`Purchasing ${selectedItem.name} for ${selectedItem.cost} coins`);
-      // You can add your purchase logic here (e.g., deduct coins, add item to inventory)
-      handleCoinCountChange(-1*selectedItem.cost)
+      handleCoinCountChange(-1 * selectedItem.cost);
     }
     setModalVisible(false);
     setSelectedItem(null);
@@ -61,48 +61,250 @@ export default function ShopScreen() {
     setSelectedItem(null);
   };
 
-  // Sample shop data - replace with your actual data
+  // Shop data with world customization items
   const shopSections: ShopSection[] = [
     {
-      title: 'Power-Ups',
+      title: 'Plants & Flowers',
       items: [
-        { id: '1', name: '2x Points', image: require('@/assets/images/react-logo.png'), cost: 100 },
-        { id: '2', name: 'Shield', image: require('@/assets/images/react-logo.png'), cost: 150 },
-        { id: '3', name: 'Booster', image: require('@/assets/images/react-logo.png'), cost: 200 },
-        { id: '4', name: 'Extra Life', image: require('@/assets/images/react-logo.png'), cost: 250 },
-        { id: '5', name: 'Time Freeze', image: require('@/assets/images/react-logo.png'), cost: 300 },
-        { id: '6', name: 'Speed Up', image: require('@/assets/images/react-logo.png'), cost: 175 },
-        { id: '7', name: 'Lucky Star', image: require('@/assets/images/react-logo.png'), cost: 225 },
-        { id: '8', name: 'Magnet', image: require('@/assets/images/react-logo.png'), cost: 125 },
-        { id: '9', name: 'Multiplier', image: require('@/assets/images/react-logo.png'), cost: 275 },
+        { 
+          id: '1', 
+          name: 'Sunflowers', 
+          icon: '🌻', 
+          cost: 75,
+          description: 'Add a cheerful patch of sunflowers around your tree. They sway gently in the breeze!'
+        },
+        { 
+          id: '2', 
+          name: 'Cherry Blossoms', 
+          icon: '🌸', 
+          cost: 120,
+          description: 'Beautiful pink cherry blossoms that bloom at the base of your tree for 7 days.'
+        },
+        { 
+          id: '3', 
+          name: 'Tulip Garden', 
+          icon: '🌷', 
+          cost: 90,
+          description: 'A colorful bed of tulips in red, yellow, and pink. Perfect for spring vibes!'
+        },
+        { 
+          id: '4', 
+          name: 'Rose Bush', 
+          icon: '🌹', 
+          cost: 100,
+          description: 'Elegant red roses grow beside your tree, adding romance to your world.'
+        },
+        { 
+          id: '5', 
+          name: 'Wildflower Meadow', 
+          icon: '🌼', 
+          cost: 85,
+          description: 'A natural meadow of mixed wildflowers spreads across your landscape.'
+        },
+        { 
+          id: '6', 
+          name: 'Lotus Pond', 
+          icon: '🪷', 
+          cost: 150,
+          description: 'Add a serene pond with floating lotus flowers near your tree.'
+        },
+        { 
+          id: '7', 
+          name: 'Mushroom Circle', 
+          icon: '🍄', 
+          cost: 65,
+          description: 'Whimsical mushrooms grow in a fairy ring around your tree base.'
+        },
+        { 
+          id: '8', 
+          name: 'Cactus Garden', 
+          icon: '🌵', 
+          cost: 80,
+          description: 'Desert cacti add a unique southwestern touch to your environment.'
+        },
       ],
     },
     {
-      title: 'Cosmetics',
+      title: 'Animals & Pets',
       items: [
-        { id: '10', name: 'Red Theme', image: require('@/assets/images/react-logo.png'), cost: 50 },
-        { id: '11', name: 'Blue Theme', image: require('@/assets/images/react-logo.png'), cost: 50 },
-        { id: '12', name: 'Green Theme', image: require('@/assets/images/react-logo.png'), cost: 50 },
-        { id: '13', name: 'Gold Border', image: require('@/assets/images/react-logo.png'), cost: 100 },
-        { id: '14', name: 'Silver Border', image: require('@/assets/images/react-logo.png'), cost: 75 },
-        { id: '15', name: 'Bronze Border', image: require('@/assets/images/react-logo.png'), cost: 60 },
-        { id: '16', name: 'Sparkle Effect', image: require('@/assets/images/react-logo.png'), cost: 120 },
-        { id: '17', name: 'Glow Effect', image: require('@/assets/images/react-logo.png'), cost: 110 },
-        { id: '18', name: 'Shadow Effect', image: require('@/assets/images/react-logo.png'), cost: 90 },
+        { 
+          id: '9', 
+          name: 'Butterfly Swarm', 
+          icon: '🦋', 
+          cost: 110,
+          description: 'Colorful butterflies flutter around your tree for 3 days, adding life and movement.'
+        },
+        { 
+          id: '10', 
+          name: 'Bird Nest', 
+          icon: '🐦', 
+          cost: 95,
+          description: 'A family of birds makes a nest in your tree. Hear them chirp throughout the day!'
+        },
+        { 
+          id: '11', 
+          name: 'Friendly Squirrel', 
+          icon: '🐿️', 
+          cost: 120,
+          description: 'An adorable squirrel scampers up and down your tree, collecting acorns.'
+        },
+        { 
+          id: '12', 
+          name: 'Ladybugs', 
+          icon: '🐞', 
+          cost: 70,
+          description: 'Lucky ladybugs crawl on your tree leaves, bringing good fortune.'
+        },
+        { 
+          id: '13', 
+          name: 'Bunny Visitor', 
+          icon: '🐰', 
+          cost: 100,
+          description: 'A cute bunny hops around your tree, nibbling on grass and flowers.'
+        },
+        { 
+          id: '14', 
+          name: 'Honeybees', 
+          icon: '🐝', 
+          cost: 85,
+          description: 'Busy bees buzz around pollinating your flowers and making honey.'
+        },
+        { 
+          id: '15', 
+          name: 'Garden Snail', 
+          icon: '🐌', 
+          cost: 60,
+          description: 'A peaceful snail slowly explores the base of your tree, leaving a sparkly trail.'
+        },
+        { 
+          id: '16', 
+          name: 'Owl Perch', 
+          icon: '🦉', 
+          cost: 130,
+          description: 'A wise owl sits in your tree at night, hooting softly under the stars.'
+        },
       ],
     },
     {
-      title: 'Special Items',
+      title: 'Weather & Sky',
       items: [
-        { id: '19', name: 'Mystery Box', image: require('@/assets/images/react-logo.png'), cost: 500 },
-        { id: '20', name: 'Rare Chest', image: require('@/assets/images/react-logo.png'), cost: 750 },
-        { id: '21', name: 'Epic Crate', image: require('@/assets/images/react-logo.png'), cost: 1000 },
-        { id: '22', name: 'Daily Bonus', image: require('@/assets/images/react-logo.png'), cost: 200 },
-        { id: '23', name: 'Weekly Pack', image: require('@/assets/images/react-logo.png'), cost: 600 },
-        { id: '24', name: 'Monthly Deal', image: require('@/assets/images/react-logo.png'), cost: 1500 },
-        { id: '25', name: 'Starter Pack', image: require('@/assets/images/react-logo.png'), cost: 300 },
-        { id: '26', name: 'Pro Pack', image: require('@/assets/images/react-logo.png'), cost: 800 },
-        { id: '27', name: 'Ultimate Pack', image: require('@/assets/images/react-logo.png'), cost: 2000 },
+        { 
+          id: '17', 
+          name: 'Rainbow', 
+          icon: '🌈', 
+          cost: 200,
+          description: 'A beautiful rainbow arcs over your tree for 24 hours. Pure magical vibes!'
+        },
+        { 
+          id: '18', 
+          name: 'Gentle Rain', 
+          icon: '🌧️', 
+          cost: 90,
+          description: 'Soft rain falls for a day, making everything fresh and helping your plants grow.'
+        },
+        { 
+          id: '19', 
+          name: 'Sunshine Rays', 
+          icon: '☀️', 
+          cost: 80,
+          description: 'Bright sun rays beam down through your tree branches, creating a warm glow.'
+        },
+        { 
+          id: '20', 
+          name: 'Starry Night', 
+          icon: '✨', 
+          cost: 150,
+          description: 'Transform your sky into a stunning starry night with twinkling stars for 24 hours.'
+        },
+        { 
+          id: '21', 
+          name: 'Cloud Shapes', 
+          icon: '☁️', 
+          cost: 70,
+          description: 'Fun shaped clouds (hearts, animals, etc.) float by in your sky.'
+        },
+        { 
+          id: '22', 
+          name: 'Northern Lights', 
+          icon: '🌌', 
+          cost: 250,
+          description: 'Spectacular aurora borealis dances in your night sky for 2 days. Breathtaking!'
+        },
+        { 
+          id: '23', 
+          name: 'Fireflies', 
+          icon: '✨', 
+          cost: 110,
+          description: 'Magical fireflies illuminate your tree at dusk, creating a fairy-tale atmosphere.'
+        },
+        { 
+          id: '24', 
+          name: 'Shooting Stars', 
+          icon: '💫', 
+          cost: 140,
+          description: 'Watch shooting stars streak across your night sky. Make a wish!'
+        },
+      ],
+    },
+    {
+      title: 'Special Decorations',
+      items: [
+        { 
+          id: '25', 
+          name: 'Fairy Lights', 
+          icon: '💡', 
+          cost: 160,
+          description: 'String twinkling fairy lights through your tree branches. Perfect for evenings!'
+        },
+        { 
+          id: '26', 
+          name: 'Wind Chimes', 
+          icon: '🎐', 
+          cost: 95,
+          description: 'Hang beautiful wind chimes that make peaceful sounds in the breeze.'
+        },
+        { 
+          id: '27', 
+          name: 'Garden Gnome', 
+          icon: '🧙', 
+          cost: 120,
+          description: 'A cheerful garden gnome keeps watch over your tree and garden.'
+        },
+        { 
+          id: '28', 
+          name: 'Birdhouse', 
+          icon: '🏠', 
+          cost: 85,
+          description: 'Hang a cozy birdhouse where feathered friends can rest and nest.'
+        },
+        { 
+          id: '29', 
+          name: 'Seasonal Wreath', 
+          icon: '🎀', 
+          cost: 100,
+          description: 'A decorative wreath that changes with the seasons adorns your tree.'
+        },
+        { 
+          id: '30', 
+          name: 'Stone Path', 
+          icon: '🪨', 
+          cost: 110,
+          description: 'A charming stone pathway leads up to your tree through the garden.'
+        },
+        { 
+          id: '31', 
+          name: 'Lantern Post', 
+          icon: '🏮', 
+          cost: 130,
+          description: 'An elegant lantern post lights up your tree area when the sun sets.'
+        },
+        { 
+          id: '32', 
+          name: 'Swing', 
+          icon: '🎪', 
+          cost: 175,
+          description: 'Hang a wooden swing from your tree branch. Peaceful and nostalgic!'
+        },
       ],
     },
   ];
@@ -114,13 +316,14 @@ export default function ShopScreen() {
       onPress={() => handleItemPress(item)}
       activeOpacity={0.7}
     >
-      <View style={styles.imageContainer}>
-        <Image source={item.image} style={styles.itemImage} resizeMode="contain" />
+      <View style={styles.iconContainer}>
+        <Text style={styles.itemIcon}>{item.icon}</Text>
       </View>
-      <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-      <View style={styles.coinContainer}>
-        <Text style={styles.coinIcon}>🪙</Text>
-        <Text style={styles.coinCost}>{item.cost}</Text>
+      <View style={styles.itemDetails}>
+        <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+        <View style={styles.coinContainer}>
+          <Text style={styles.coinCost}>{item.cost}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -139,7 +342,6 @@ export default function ShopScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Shop</Text>
         <View style={styles.coinBalance}>
-          <Text style={styles.coinBalanceIcon}>🪙</Text>
           <Text style={styles.coinBalanceText}>{currentCoins.toLocaleString()}</Text>
         </View>
       </View>
@@ -151,7 +353,7 @@ export default function ShopScreen() {
         {shopSections.map((section, index) => renderSection(section, index))}
       </ScrollView>
 
-      {/* Purchase Confirmation Modal */}
+      {/* Item Details Modal */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -160,28 +362,22 @@ export default function ShopScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Confirm Purchase</Text>
-
             {selectedItem && (
               <>
-                <View style={styles.modalImageContainer}>
-                  <Image
-                    source={selectedItem.image}
-                    style={styles.modalImage}
-                    resizeMode="contain"
-                  />
+                <View style={styles.modalIconContainer}>
+                  <Text style={styles.modalIcon}>{selectedItem.icon}</Text>
                 </View>
 
                 <Text style={styles.modalItemName}>{selectedItem.name}</Text>
 
                 <View style={styles.modalCoinContainer}>
-                  <Text style={styles.modalCoinIcon}>🪙</Text>
                   <Text style={styles.modalCoinCost}>{selectedItem.cost}</Text>
                 </View>
 
-                <Text style={styles.modalQuestion}>
-                  Do you want to purchase this item?
-                </Text>
+                <View style={styles.descriptionContainer}>
+                  <Text style={styles.descriptionTitle}>Description</Text>
+                  <Text style={styles.descriptionText}>{selectedItem.description}</Text>
+                </View>
 
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
@@ -201,13 +397,11 @@ export default function ShopScreen() {
                     activeOpacity={currentCoins >= selectedItem.cost ? 0.8 : 1}
                     disabled={currentCoins < selectedItem.cost}
                   >
-                    <Text style={styles.confirmButtonText}>Purchase</Text>
+                    <Text style={styles.confirmButtonText}>
+                      {currentCoins >= selectedItem.cost ? 'Purchase' : 'Not Enough Coins'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
-
-                {currentCoins < selectedItem.cost && (
-                  <Text style={styles.errorText}>Not enough coins!</Text>
-                )}
               </>
             )}
           </View>
@@ -217,21 +411,24 @@ export default function ShopScreen() {
   );
 }
 
-const ITEM_SIZE = (SCREEN_WIDTH - 60) / 3; // 3 items per row, accounting for padding
+const PADDING = 15;
+const SECTION_PADDING = 16;
+const ITEM_SPACING = 10;
+const ITEM_WIDTH = (SCREEN_WIDTH - (PADDING * 2) - (SECTION_PADDING * 2) - ITEM_SPACING) / 2;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#E8F5E9',
   },
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    shadowColor: '#000',
+    borderBottomColor: '#C8E6C9',
+    shadowColor: '#43A047',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -243,26 +440,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#2E7D32',
   },
   coinBalance: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff3cd',
+    backgroundColor: '#F1F8E9',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#ffc107',
-  },
-  coinBalanceIcon: {
-    fontSize: 20,
-    marginRight: 6,
+    borderColor: '#66BB6A',
   },
   coinBalanceText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#856404',
+    color: '#2E7D32',
   },
   scrollView: {
     flex: 1,
@@ -272,20 +465,22 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   section: {
-    marginBottom: 30,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    shadowColor: '#000',
+    marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#43A047',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
   },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2E7D32',
     marginBottom: 15,
   },
   gridContainer: {
@@ -294,51 +489,57 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   shopItem: {
-    width: ITEM_SIZE,
-    aspectRatio: 1,
-    backgroundColor: '#fafafa',
-    borderRadius: 10,
-    padding: 8,
-    marginBottom: 10,
+    width: ITEM_WIDTH,
+    backgroundColor: '#F1F8E9',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
+    shadowColor: '#43A047',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  imageContainer: {
-    flex: 1,
-    width: '100%',
+  iconContainer: {
+    width: 80,
+    height: 80,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
   },
-  itemImage: {
-    width: '80%',
-    height: '80%',
+  itemIcon: {
+    fontSize: 56,
+  },
+  itemDetails: {
+    width: '100%',
+    alignItems: 'center',
   },
   itemName: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#333',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2E7D32',
     textAlign: 'center',
-    marginTop: 4,
+    marginBottom: 8,
   },
   coinContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    backgroundColor: '#fff3cd',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
-  },
-  coinIcon: {
-    fontSize: 12,
-    marginRight: 4,
+    borderWidth: 1,
+    borderColor: '#66BB6A',
   },
   coinCost: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#856404',
+    color: '#2E7D32',
   },
   modalOverlay: {
     flex: 1,
@@ -347,108 +548,116 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 30,
-    width: '85%',
+    width: '90%',
     maxWidth: 400,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#43A047',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
   },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-  },
-  modalImageContainer: {
+  modalIconContainer: {
     width: 120,
     height: 120,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 15,
+    backgroundColor: '#F1F8E9',
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderWidth: 3,
+    borderColor: '#66BB6A',
   },
-  modalImage: {
-    width: '80%',
-    height: '80%',
+  modalIcon: {
+    fontSize: 72,
   },
   modalItemName: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2E7D32',
     marginBottom: 15,
     textAlign: 'center',
   },
   modalCoinContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff3cd',
+    backgroundColor: '#F1F8E9',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
     marginBottom: 20,
-  },
-  modalCoinIcon: {
-    fontSize: 20,
-    marginRight: 8,
+    borderWidth: 2,
+    borderColor: '#66BB6A',
   },
   modalCoinCost: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#856404',
+    color: '#2E7D32',
   },
-  modalQuestion: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+  descriptionContainer: {
+    width: '100%',
+    backgroundColor: '#F1F8E9',
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 25,
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
+  },
+  descriptionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    marginBottom: 8,
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: '#66BB6A',
+    lineHeight: 20,
+    fontWeight: '500',
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 15,
+    gap: 12,
     width: '100%',
   },
   modalButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#43A047',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cancelButton: {
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#d0d0d0',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
   },
   confirmButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#43A047',
+    borderWidth: 2,
+    borderColor: '#43A047',
   },
   disabledButton: {
-    backgroundColor: '#cccccc',
+    backgroundColor: '#C8E6C9',
+    borderWidth: 2,
+    borderColor: '#C8E6C9',
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: '700',
+    color: '#66BB6A',
   },
   confirmButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  errorText: {
-    marginTop: 15,
     fontSize: 14,
-    fontWeight: '600',
-    color: '#dc3545',
-    textAlign: 'center',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
