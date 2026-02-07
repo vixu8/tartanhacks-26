@@ -7,7 +7,6 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   Keyboard,
   Animated,
@@ -15,7 +14,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { addEvent } from '../firebase/database';
+import { addEvent } from '../../firebase/database';
 
 type EventDetailsModalProps = {
   visible: boolean;
@@ -53,9 +52,16 @@ export default function EventDetailsModal({
 
   React.useEffect(() => {
     if (visible) {
+      console.log('[EventDetailsModal] visible -> true');
       setDetailTitle(eventTitle);
     }
   }, [visible, eventTitle]);
+
+  React.useEffect(() => {
+    if (!visible) {
+      console.log('[EventDetailsModal] visible -> false');
+    }
+  }, [visible]);
   const [detailDate, setDetailDate] = useState('');
   const [detailTime, setDetailTime] = useState('');
   const [meridiem, setMeridiem] = useState<'AM' | 'PM'>('AM');
@@ -148,6 +154,7 @@ export default function EventDetailsModal({
   };
 
   const handleCancel = () => {
+    console.log('[EventDetailsModal] cancel pressed');
     resetForm();
     onClose();
   };
@@ -237,6 +244,7 @@ export default function EventDetailsModal({
 
       await addEvent(payload);
       showToast('Event saved');
+      console.log('[EventDetailsModal] saved, closing');
       onClose();
       onSaved?.();
     } catch (error) {
@@ -244,20 +252,16 @@ export default function EventDetailsModal({
     }
   };
 
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancel}>
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoiding}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'position'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+    <>
+      <Animated.View
+        style={[
+          styles.modalCard,
+          { height: cardHeight, transform: [{ translateY: cardTranslateY }] },
+        ]}
       >
-        <View style={styles.modalOverlay}>
-          <Animated.View
-            style={[
-              styles.modalCard,
-              { height: cardHeight, transform: [{ translateY: cardTranslateY }] },
-            ]}
-          >
             <Text style={styles.modalTitle}>Event Details</Text>
 
             <View style={styles.scrollArea}>
@@ -419,9 +423,7 @@ export default function EventDetailsModal({
                 </Pressable>
               </View>
             )}
-          </Animated.View>
-        </View>
-      </KeyboardAvoidingView>
+      </Animated.View>
       {toastMessage ? (
         <View style={styles.toast} pointerEvents="none">
           <Text style={styles.toastText}>{toastMessage}</Text>
@@ -453,22 +455,11 @@ export default function EventDetailsModal({
           </View>
         </View>
       </Modal>
-    </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardAvoiding: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
   modalCard: {
     width: '100%',
     maxWidth: 380,
@@ -506,7 +497,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
     color: '#111827',
-    placeholderTextColor: '#1f2937',
     minHeight: 44,
   },
   row: {

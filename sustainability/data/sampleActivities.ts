@@ -1,4 +1,7 @@
-import { DataItem } from "@/components2/DataList";
+
+import { DataItem } from "@/components/DataList";
+
+
 
 export const sampleActivities: DataItem[] = [
   {

@@ -1,8 +1,20 @@
-import { useState } from 'react';
-import { Tabs } from 'expo-router';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import LogEventModal from '../../components2/LogEventModal';
+
+
+import { Tabs, useGlobalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+
+
+
+
+
+
+
+const router = useRouter();
+
+import LogEventModal from '../components/LogEventModal';
+
 
 function CustomTabBar({ state, descriptors, navigation, onPlusPress }: any) {
   return (
@@ -67,12 +79,22 @@ function CustomTabBar({ state, descriptors, navigation, onPlusPress }: any) {
 
 export default function TabLayout() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
+  const params = useGlobalSearchParams<{ log?: string; preset?: string }>();
+
+  useEffect(() => {
+    // when route has ?log=1, open the modal
+    if (params.log === "1") {
+      setIsModalOpen(true);
+    }
+  }, [params.log]);
 
   return (
     <>
       <Tabs
         tabBar={(props) => (
-          <CustomTabBar {...props} onPlusPress={() => setIsModalOpen(true)} />
+          <CustomTabBar {...props} onPlusPress={
+            () => {router.replace({ pathname: "/home", params: { log: "1" } });}} />
         )}
         screenOptions={{
           headerShown: false,
@@ -87,7 +109,11 @@ export default function TabLayout() {
 
       <LogEventModal
         visible={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        presetId={params.preset}
+        onClose={() => {
+          setIsModalOpen(false);
+          router.replace("/(tabs)/home"); // clears log param so it doesn't reopen
+        }}
       />
     </>
   );
