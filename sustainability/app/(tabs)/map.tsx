@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import MapView, { Callout, Marker, Region } from "react-native-maps";
+import MapView, { Marker, Region } from "react-native-maps";
 
 type Event = {
   id: string;
@@ -38,29 +38,28 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} initialRegion={initialRegion} onPress={() => setSelected(null)}>
+      <MapView style={styles.map} initialRegion={initialRegion}>
         {visiblePins.map((p) => (
           <Marker
-            key={p.id}
-            coordinate={{ latitude: p.lat, longitude: p.lng }}
-            title={p.title}
-            description={p.description}
-            onPress={() => setSelected(p)}
-          >
-            <Callout onPress={() => setSelected(p)}>
-              <View style={{ maxWidth: 220 }}>
-                <Text style={{ fontWeight: "600" }}>{p.title}</Text>
-                {!!p.description && <Text>{p.description}</Text>}
-                <Text style={{ marginTop: 6, opacity: 0.7 }}>Tap for details</Text>
-              </View>
-            </Callout>
-          </Marker>
+          key={p.id}
+          coordinate={{ latitude: p.lat, longitude: p.lng }}
+          onPress={() => setSelected(p)}
+        >
+          <View style={styles.pinWithLabel}>
+          <View style={styles.labelBubble}>
+          <Text style={styles.labelText}>{p.title}</Text>
+          </View>
+          </View> 
+        </Marker>
         ))}
       </MapView>
 
       {/* simple “bottom sheet” */}
       {selected && (
         <View style={styles.sheet}>
+          <Pressable onPress={() => setSelected(null)} style={styles.close} hitSlop={12}>
+      <Text style={{ fontSize: 18 }}>✕</Text>
+    </Pressable>
           <Text style={styles.sheetTitle}>{selected.title}</Text>
           {!!selected.description && <Text style={styles.sheetBody}>{selected.description}</Text>}
 
@@ -99,6 +98,42 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
   },
   buttonText: { color: "white", fontWeight: "600" },
+  pinText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 12,
+  },
+  close: {
+    position: "absolute",
+    top: 10,
+    right: 12,
+    padding: 6,
+    zIndex: 10,
+  },
+  pinWithLabel: {
+    alignItems: "flex-start",
+  },
+  
+  labelBubble: {
+    backgroundColor: "white",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginLeft: 18, // pushes bubble to right of pin
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  
+  labelText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  
 });
 
 
