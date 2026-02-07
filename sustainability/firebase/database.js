@@ -17,130 +17,113 @@ export const getEvents = async () => {
 
 /** 2) Write: add a single event */
 export const addEvent = async (event) => {
-  // event should include: title, lat, lng (numbers). Others optional.
+  // Get current count of events to determine the next id
+  const snap = await getDocs(collection(db, "events"));
+  const nextId = snap.size + 1;
+
   const docRef = await addDoc(collection(db, "events"), {
     ...event,
+    id: nextId.toString(),
     createdAt: serverTimestamp(),
   });
   return docRef.id;
 };
 
 /** 3) Seed: add a bunch of fake events for demo */
-export const seedFakeEvents = async () => {
-  const demoEvents = [
-    {
-    id: "1",
-    title: "Used reusable water bottle",
-    points: 10,
-    description: "Avoided single-use plastic by bringing a reusable water bottle to work.",
-    date: "2026-02-07",
-    tags: ["water"],
-  },
-  {
-    id: "2",
-    title: "Carpooled to work",
-    points: 15,
-    description: "Shared a ride with 3 colleagues, reducing carbon emissions.",
-    date: "2026-02-07",
-    tags: ["transport"],
-  },
-  {
-    id: "3",
-    title: "Drove alone to the store",
-    points: -5,
-    description: "Could have walked or biked for this short trip.",
-    date: "2026-02-07",
-    tags: ["transport"],
-  },
-  {
-    id: "4",
-    title: "Recycled paper waste",
-    points: 5,
-    description: "Properly sorted and recycled all paper materials.",
-    date: "2026-02-06",
-    tags: ["food", "waste"],
-  },
-  {
-    id: "5",
-    title: "Used plastic bags at grocery",
-    points: -3,
-    description: "Forgot to bring reusable shopping bags.",
-    date: "2026-02-06",
-    tags: ["water", "waste"],
-  },
-  {
-    id: "6",
-    title: "Composted food scraps",
-    points: 8,
-    description: "Diverted organic waste from landfill.",
-    date: "2026-02-05",
-    tags: ["food", "waste"],
-  },
-  {
-    id: "7",
-    title: "Took public transportation",
-    points: 12,
-    description: "Used the bus instead of driving.",
-    date: "2026-02-05",
-    tags: ["transport"],
-  },
-  {
-    id: "8",
-    title: "Left lights on overnight",
-    points: -4,
-    description: "Wasted electricity by leaving multiple lights on.",
-    date: "2026-02-04",
-    tags: ["water"],
-  },
-    {
-    id: "9",
-    title: "Lfeshts on overnight",
-    points: -1,
-    description: "ectricity by leaving multiple lights on.",
-    date: "2026-02-09",
-    tags: ["food"],
-  },
-    {
-    id: "10",
-    title: "ernight",
-    points: 4,
-    description: "Wasted elecaving multiple lights on.",
-    date: "2026-02-10",
-    tags: ["transport"],
-  },
-    {
-    id: "11",
-    title: "Light",
-    points: 10,
-    description: "Wasple lights on.",
-    date: "2026-02-12",
-    tags: ["water"],
-  },
-    {
-    id: "12",
-    title: "Left lights on overnight",
-    points: -4,
-    description: "Wasted electricity by leaving multiple lights on.",
-    date: "2026-02-04",
-    tags: ["food"],
-  },
-    {
-    id: "13",
-    title: "Left lights on overnight",
-    points: -4,
-    description: "Wasted electricity by leaving multiple lights on.",
-    date: "2026-02-04",
-    tags: ["transport"],
-  },
-    {
-    id: "14",
-    title: "Left lights on overnight",
-    points: -4,
-    description: "Wasted electricity by leaving multiple lights on.",
-    date: "2026-02-04",
-    tags: ["water"],
-  },
+export const seedFakeEvents = async (n) => {
+  // Collections to randomly pick from
+  const titles = [
+    "Used reusable water bottle",
+    "Carpooled to work",
+    "Drove alone to the store",
+    "Recycled paper waste",
+    "Used plastic bags at grocery",
+    "Composted food scraps",
+    "Took public transportation",
+    "Left lights on overnight",
+    "Biked to work",
+    "Ate a plant-based meal",
+    "Wasted food",
+    "Used solar panels",
+    "Took a long shower",
+    "Walked instead of driving",
+    "Bought fast fashion",
+    "Thrifted clothing",
+    "Unplugged electronics",
+    "Left AC running all day",
+    "Started a garden",
+    "Used single-use plastics"
   ];
+
+  const descriptions = [
+    "Avoided single-use plastic by bringing a reusable water bottle to work.",
+    "Shared a ride with colleagues, reducing carbon emissions.",
+    "Could have walked or biked for this short trip.",
+    "Properly sorted and recycled all paper materials.",
+    "Forgot to bring reusable shopping bags.",
+    "Diverted organic waste from landfill.",
+    "Used the bus instead of driving.",
+    "Wasted electricity by leaving multiple lights on.",
+    "Zero emissions commute today.",
+    "Reduced meat consumption for environmental benefit.",
+    "Let leftovers go bad in the fridge.",
+    "Renewable energy powered the house today.",
+    "Used excessive water during morning routine.",
+    "Chose active transportation over driving.",
+    "Contributed to textile waste and pollution.",
+    "Sustainable fashion choice reduced waste.",
+    "Prevented phantom energy drain.",
+    "Unnecessarily cooled an empty house.",
+    "Growing own vegetables reduces food miles.",
+    "Added more plastic to landfills."
+  ];
+
+  const tagOptions = ["water", "transport", "food", "waste", "energy"];
+
+  // Helper function to get random element from array
+  const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  // Helper function to get random number of tags (1-3)
+  const getRandomTags = () => {
+    const numTags = Math.floor(Math.random() * 3) + 1;
+    const tags = new Set();
+    while (tags.size < numTags) {
+      tags.add(getRandom(tagOptions));
+    }
+    return Array.from(tags);
+  };
+
+  // Helper function to get random date in the past 14 days
+  const getRandomDate = () => {
+    const today = new Date();
+    const daysAgo = Math.floor(Math.random() * 14);
+    const date = new Date(today);
+    date.setDate(date.getDate() - daysAgo);
+    return date.toISOString().split('T')[0];
+  };
+
+  // Helper function to get random time in 12-hour format
+  const getRandomTime = () => {
+    const hours = Math.floor(Math.random() * 12) + 1; // 1-12
+    const minutes = Math.floor(Math.random() * 60); // 0-59
+    const meridiem = Math.random() < 0.5 ? 'AM' : 'PM';
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    return `${hours}:${formattedMinutes} ${meridiem}`;
+  };
+
+  // Generate n random events
+  const demoEvents = [];
+  for (let i = 0; i < n; i++) {
+    const points = Math.floor(Math.random() * 201) - 100; // -100 to 100
+    demoEvents.push({
+      title: getRandom(titles),
+      points: points,
+      description: getRandom(descriptions),
+      date: getRandomDate(),
+      time: getRandomTime(),
+      tags: getRandomTags(),
+    });
+  }
 
   // Add them sequentially (simple + safe)
   for (const ev of demoEvents) {
