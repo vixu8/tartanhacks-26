@@ -15,7 +15,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { addEvent } from '../firebase/database';
+import { addEvent } from '../../firebase/database';
 
 type EventDetailsModalProps = {
   visible: boolean;

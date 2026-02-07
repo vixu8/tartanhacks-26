@@ -16,7 +16,7 @@ import {
   Easing,
   Dimensions,
 } from 'react-native';
-import { addEvent } from '../firebase/database';
+import { addEvent } from '../../firebase/database';
 import EventDetailsModal from './EventDetailsModal';
 
 type LogEventModalProps = {
