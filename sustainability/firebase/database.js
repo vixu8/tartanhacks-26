@@ -27,25 +27,46 @@ export const addEvent = async (event) => {
 export const seedFakeEvents = async () => {
   const demoEvents = [
     {
-      title: "Park Cleanup",
-      description: "Meet by the fountain. Gloves provided.",
+      title: "Walked",
+      description: "Walked instead of driving.",
       lat: 40.4419,
       lng: -79.9416,
-      tags: ["cleanup"],
+      tags: ["transportation"],
     },
     {
-      title: "Recycling Drive",
-      description: "Bring e-waste + batteries.",
+      title: "Biked",
+      description: "Biked to destination.",
       lat: 40.444,
       lng: -79.953,
-      tags: ["recycling"],
+      tags: ["transportation"],
     },
     {
-      title: "Tree Planting",
-      description: "Help plant 50 saplings!",
+      title: "Drove",
+      description: "Drove to location.",
       lat: 40.452,
       lng: -79.945,
-      tags: ["trees"],
+      tags: ["transportation"],
+    },
+    {
+      title: "Thrifted",
+      description: "Bought secondhand items.",
+      lat: 40.448,
+      lng: -79.948,
+      tags: ["shopping"],
+    },
+    {
+      title: "Ate plant-based",
+      description: "Chose plant-based meal option.",
+      lat: 40.443,
+      lng: -79.950,
+      tags: ["food"],
+    },
+    {
+      title: "Recycled",
+      description: "Properly recycled materials.",
+      lat: 40.441,
+      lng: -79.944,
+      tags: ["recycling"],
     },
   ];
 

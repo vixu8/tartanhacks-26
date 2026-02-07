@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Tabs } from 'expo-router';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import LogEventModal from '../../components/LogEventModal';
 
-function CustomTabBar({ state, descriptors, navigation }: any) {
+function CustomTabBar({ state, descriptors, navigation, onPlusPress }: any) {
   return (
     <View style={styles.tabBarContainer}>
       <View style={styles.tabBar}>
@@ -56,7 +58,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       </View>
 
       {/* Centered Plus Button */}
-      <TouchableOpacity style={styles.plusButton}>
+      <TouchableOpacity style={styles.plusButton} onPress={onPlusPress}>
         <Ionicons name="add" size={36} color="white" />
       </TouchableOpacity>
     </View>
@@ -64,19 +66,30 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 }
 
 export default function TabLayout() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
-    <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tabs.Screen name="home" />
-      <Tabs.Screen name="shop" />
-      <Tabs.Screen name="placeholder" options={{ href: null }} />
-      <Tabs.Screen name="map" />
-      <Tabs.Screen name="profile" />
-    </Tabs>
+    <>
+      <Tabs
+        tabBar={(props) => (
+          <CustomTabBar {...props} onPlusPress={() => setIsModalOpen(true)} />
+        )}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Tabs.Screen name="home" />
+        <Tabs.Screen name="shop" />
+        <Tabs.Screen name="placeholder" options={{ href: null }} />
+        <Tabs.Screen name="map" />
+        <Tabs.Screen name="profile" />
+      </Tabs>
+
+      <LogEventModal
+        visible={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
   );
 }
 
