@@ -1,14 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  FlatList,
   Modal,
-  View,
-  Text,
-  TextInput,
   Pressable,
   StyleSheet,
-  Alert,
-  FlatList,
-  ActivityIndicator,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
 import { addEvent } from '../firebase/database';
 import EventDetailsModal from './EventDetailsModal';
@@ -17,6 +16,7 @@ type LogEventModalProps = {
   visible: boolean;
   onClose: () => void;
   onSaved?: () => void;
+  presetId?: string;
 };
 
 type Event = {
@@ -39,9 +39,10 @@ const DEFAULT_EVENTS: Event[] = [
   { id: '9', title: 'Tap off while brushing', description: 'Turned off tap while brushing teeth.' },
   { id: '10', title: 'Refill bottle', description: 'Refilled reusable water bottle.' },
   { id: '11', title: 'No AI usage', description: 'Completed task without using AI.' },
+  { id: '12', title: 'Went to sustainable event', description: 'Went to an event that encourages sustainability.' },
 ];
 
-export default function LogEventModal({ visible, onClose, onSaved }: LogEventModalProps) {
+export default function LogEventModal({ visible, onClose, onSaved, presetId }: LogEventModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [events, setEvents] = useState<Event[]>(DEFAULT_EVENTS);
   const [loading, setLoading] = useState(false);
@@ -61,6 +62,17 @@ export default function LogEventModal({ visible, onClose, onSaved }: LogEventMod
       setSelectedEvent(null);
       setSearchQuery('');
       setShowCustom(false);
+
+      const preset = presetId ? DEFAULT_EVENTS.find(e => e.id === presetId) : null;
+    if (preset) {
+      setSelectedEvent(preset);
+      setDetailsEventTitle(preset.title || "");
+      setDetailsVisible(true); // auto open details
+    } else {
+      setSelectedEvent(null);
+      setDetailsVisible(false);
+      setDetailsEventTitle("");
+    }
     }
   }, [visible]);
 

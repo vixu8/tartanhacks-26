@@ -2,6 +2,11 @@ import React, { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 
+import { useRouter } from "expo-router";
+
+
+
+
 type Event = {
   id: string;
   title: string;
@@ -13,6 +18,7 @@ type Event = {
 };
 
 export default function MapScreen() {
+  const router = useRouter();
   const pins: Event[] = useMemo(
     () => [
       { id: "1", title: "Event 1", description: "boomshakalaka", lat: 40.4433, lng: -79.9436,  startsAt: "2026-02-06T18:30:00-05:00", endsAt: "2026-02-10T18:30:00-05:00"},
@@ -63,7 +69,12 @@ export default function MapScreen() {
           <Text style={styles.sheetTitle}>{selected.title}</Text>
           {!!selected.description && <Text style={styles.sheetBody}>{selected.description}</Text>}
 
-          <Pressable style={styles.button} onPress={() => alert(`Do something with ${selected.id}`)}>
+          <Pressable style={styles.button} onPress={() => {
+                      router.replace({
+                        pathname: "/home",
+                        params: { log: "1", preset: "12" }, // 12 = Went to sustainable event
+                      });
+                      }}>
             <Text style={styles.buttonText}>Action</Text>
           </Pressable>
         </View>
