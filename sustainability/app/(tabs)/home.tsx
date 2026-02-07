@@ -12,11 +12,11 @@ import {
   View,
 } from "react-native";
 
-import DataList from "@/components/DataList";
+import DataList, { DataItem } from "@/components/DataList";
 
 //import DataList from "@/app/components/DataList";
 
-import { sampleActivities } from "@/data/sampleActivities";
+import { getEvents } from "@/firebase/database";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -80,9 +80,23 @@ export default function HomeScreen() {
   const [visible, setVisible] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [activities, setActivities] = useState<DataItem[]>([]);
 
   const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.7;
   const backgroundImageSrc = "@/assets/images/tree-placeholder.png";
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const events = await getEvents();
+        setActivities(events as DataItem[]);
+      } catch (error) {
+        console.error("Error fetching activities:", error);
+      }
+    };
+
+    fetchActivities();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -214,7 +228,7 @@ export default function HomeScreen() {
               nestedScrollEnabled={innerScrollEnabled}
             >
               <Text style={styles.content}>Your Activity History</Text>
-              <DataList data={sampleActivities} />
+              <DataList data={activities} />
             </ScrollView>
           </View>
         </View>
