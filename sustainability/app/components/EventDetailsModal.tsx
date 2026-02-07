@@ -1,26 +1,37 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
+  Dimensions,
+  Easing,
+  Keyboard,
   Modal,
-  View,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  Platform,
-  Keyboard,
-  Animated,
-  Easing,
-  Dimensions,
+  View,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { addEvent } from '../../firebase/database';
+
+
+type EventDraft = {
+  title?: string;
+  date?: string;
+  time?: string;         // "HH:MM"
+  meridiem?: 'AM' | 'PM';
+  tags?: string[];
+  notes?: string;
+};
 
 type EventDetailsModalProps = {
   visible: boolean;
   eventTitle: string;
   onClose: () => void;
   onSaved?: () => void;
+  initialDraft?: EventDraft; 
 };
 
 const COMMON_TAGS = [
@@ -47,15 +58,23 @@ export default function EventDetailsModal({
   eventTitle,
   onClose,
   onSaved,
+  initialDraft
 }: EventDetailsModalProps) {
-  const [detailTitle, setDetailTitle] = useState(eventTitle);
+  const [detailTitle, setDetailTitle ] = useState(eventTitle);
 
   React.useEffect(() => {
     if (visible) {
-      console.log('[EventDetailsModal] visible -> true');
-      setDetailTitle(eventTitle);
-    }
-  }, [visible, eventTitle]);
+      //console.log('[EventDetailsModal] visible -> true');
+
+      //setDetailTitle(eventTitle);
+      setDetailTitle(initialDraft?.title ?? eventTitle);
+      setDetailDate(initialDraft?.date ?? '');
+      setDetailTime(initialDraft?.time ?? '');
+      setMeridiem(initialDraft?.meridiem ?? 'AM');
+      setDetailTags(initialDraft?.tags ?? []);
+      setDetailNotes(initialDraft?.notes ?? '');
+      }
+  }, [visible, eventTitle, initialDraft]);
 
   React.useEffect(() => {
     if (!visible) {
