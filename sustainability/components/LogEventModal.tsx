@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { addEvent } from '../firebase/database';
+import EventDetailsModal from './EventDetailsModal';
 
 type LogEventModalProps = {
   visible: boolean;
@@ -27,43 +28,15 @@ type Event = {
 };
 
 const DEFAULT_EVENTS: Event[] = [
-  {
-    id: '1',
-    title: 'Walked',
-    description: 'Walked instead of driving.',
-  },
-  {
-    id: '2',
-    title: 'Biked',
-    description: 'Biked to destination.',
-  },
-  {
-    id: '3',
-    title: 'Drove',
-    description: 'Drove to location.',
-  },
-  {
-    id: '4',
-    title: 'Thrifted',
-    description: 'Bought secondhand items.',
-  },
-  {
-    id: '5',
-    title: 'Ate plant-based',
-    description: 'Chose plant-based meal option.',
-  },
-  {
-    id: '6',
-    title: 'Recycled',
-    description: 'Properly recycled materials.',
-  },
+  { id: '1', title: 'Walked', description: 'Walked instead of driving.' },
+  { id: '2', title: 'Biked', description: 'Biked to destination.' },
+  { id: '3', title: 'Drove', description: 'Drove to location.' },
+  { id: '4', title: 'Thrifted', description: 'Bought secondhand items.' },
+  { id: '5', title: 'Ate plant-based', description: 'Chose plant-based meal option.' },
+  { id: '6', title: 'Recycled', description: 'Properly recycled materials.' },
 ];
 
-export default function LogEventModal({
-  visible,
-  onClose,
-  onSaved,
-}: LogEventModalProps) {
+export default function LogEventModal({ visible, onClose, onSaved }: LogEventModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [events, setEvents] = useState<Event[]>(DEFAULT_EVENTS);
   const [loading, setLoading] = useState(false);
@@ -71,11 +44,18 @@ export default function LogEventModal({
   const [showCustom, setShowCustom] = useState(false);
   const [customTitle, setCustomTitle] = useState('');
 
+  const [detailsVisible, setDetailsVisible] = useState(false);
+  const [detailsEventTitle, setDetailsEventTitle] = useState('');
+
+  const toastTimer = useRef<number | null>(null);
+  const [toastMessage, setToastMessage] = useState('');
+
   useEffect(() => {
     if (visible) {
-      setEvents(DEFAULT_EVENTS);
+      setEvents((prev) => (prev.length ? prev : DEFAULT_EVENTS));
       setSelectedEvent(null);
       setSearchQuery('');
+      setShowCustom(false);
     }
   }, [visible]);
 
@@ -83,41 +63,68 @@ export default function LogEventModal({
     event.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    if (toastTimer.current) {
+      clearTimeout(toastTimer.current as unknown as number);
+    }
+    // @ts-ignore
+    toastTimer.current = setTimeout(() => setToastMessage(''), 2500);
+  };
+
   const handleClose = () => {
     onClose();
   };
 
-  const handleSelectEvent = async (event: Event) => {
-    try {
-      setSelectedEvent(event);
-      onClose();
-      onSaved?.();
-      Alert.alert('Logged', `Event "${event.title}" logged successfully.`);
-    } catch (error) {
-      Alert.alert('Error', 'Could not log event. Please try again.');
-    }
+  const handleSelectEvent = (event: Event) => {
+    setSelectedEvent(event);
+    setDetailsEventTitle(event.title || '');
+    setDetailsVisible(true);
   };
 
   const handleSaveCustom = async () => {
     const title = customTitle.trim();
     if (!title) {
-      Alert.alert('Missing info', 'Please enter a custom event title.');
+      showToast('Please enter a custom event title.');
       return;
     }
 
     try {
-      // Persist custom event to Firebase and add to local list
-      const docId = await addEvent({ title, description: '', lat: 0, lng: 0 });
-      const newEvent: Event = { id: docId, title };
-      setEvents((prev) => [newEvent, ...prev]);
-      setSelectedEvent(newEvent);
+      setDetailsEventTitle(title);
+      setDetailsVisible(true);
       setShowCustom(false);
       setCustomTitle('');
+    } catch (error) {
+      showToast('Could not open event details.');
+    }
+  };
+
+  const handleSaveDetails = async () => {
+    const title = detailsEventTitle.trim();
+    if (!title) {
+      showToast('Please enter a title for the event.');
+      return;
+    }
+
+    try {
+      const payload: any = {
+        title,
+        description: '',
+        tags: [],
+      };
+      payload.lat = selectedEvent?.lat ?? 0;
+      payload.lng = selectedEvent?.lng ?? 0;
+
+      const docId = await addEvent(payload);
+      const newEvent: Event = { id: docId, title };
+      setEvents((prev) => [newEvent, ...prev]);
+      setDetailsVisible(false);
+      setSelectedEvent(newEvent);
+      showToast('Event saved');
       onClose();
       onSaved?.();
-      Alert.alert('Logged', `Event "${title}" logged successfully.`);
     } catch (error) {
-      Alert.alert('Error', 'Could not log custom event.');
+      showToast('Could not save event.');
     }
   };
 
@@ -203,6 +210,18 @@ export default function LogEventModal({
           </View>
         </View>
       </View>
+
+      <EventDetailsModal
+        visible={detailsVisible}
+        eventTitle={detailsEventTitle}
+        onClose={() => setDetailsVisible(false)}
+        onSaved={onSaved}
+      />
+      {toastMessage ? (
+        <View style={styles.toast} pointerEvents="none">
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </View>
+      ) : null}
     </Modal>
   );
 }
@@ -274,6 +293,71 @@ const styles = StyleSheet.create({
   customButtonText: {
     fontSize: 16,
     fontWeight: '600',
+    color: 'white',
+  },
+  detailsContainer: {
+    flex: 1,
+    marginBottom: 12,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  halfInput: {
+    flex: 1,
+  },
+  tagDropdown: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    marginTop: 6,
+    maxHeight: 120,
+  },
+  tagRow: {
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  tagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  tagText: {
+    marginRight: 6,
+  },
+  tagRemove: {
+    color: '#6b7280',
+    fontWeight: '600',
+  },
+  notesInput: {
+    minHeight: 72,
+    textAlignVertical: 'top',
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 40,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  toastText: {
     color: 'white',
   },
   emptyText: {
