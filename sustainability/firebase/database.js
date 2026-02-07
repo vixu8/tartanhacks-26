@@ -7,6 +7,8 @@ import {
 } from "firebase/firestore";
 import { db } from "./config";
 
+import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+
 /** 1) Read: get all events (fetch once) */
 export const getEvents = async () => {
   const snap = await getDocs(collection(db, "events"));
@@ -111,4 +113,32 @@ export const seedFakeEvents = async () => {
   }
 
   return demoEvents.length;
+};
+
+// Get coin count
+export const getCoinCount = async () => {
+  const docRef = doc(db, "game", "coins");
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists()) {
+    return docSnap.data().count || 0;
+  } else {
+    // Initialize if doesn't exist
+    await setDoc(docRef, { count: 0 });
+    return 0;
+  }
+};
+
+// Set coin count to specific value
+export const setCoinCount = async (amount) => {
+  const docRef = doc(db, "game", "coins");
+  await setDoc(docRef, { count: amount });
+};
+
+// Add coins (can use negative to subtract)
+export const addCoins = async (amount) => {
+  const docRef = doc(db, "game", "coins");
+  await updateDoc(docRef, {
+    count: increment(amount)
+  });
 };

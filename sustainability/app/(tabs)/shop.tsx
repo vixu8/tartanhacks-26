@@ -1,5 +1,8 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Modal } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { addCoins, getCoinCount } from '@/firebase/database';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -18,6 +21,24 @@ interface ShopSection {
 export default function ShopScreen() {
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [currentCoins, setCurrentCoins] = useState(0);
+
+    useEffect(() => {
+    // Subscribe to real-time updates
+    const docRef = doc(db, "game", "coins");
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setCurrentCoins(docSnap.data().count || 0);
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const handleCoinCountChange = async (diff) => {
+    await addCoins(diff);
+  };
 
   const handleItemPress = (item: ShopItem) => {
     setSelectedItem(item);
@@ -29,6 +50,7 @@ export default function ShopScreen() {
       // Handle purchase logic here
       console.log(`Purchasing ${selectedItem.name} for ${selectedItem.cost} coins`);
       // You can add your purchase logic here (e.g., deduct coins, add item to inventory)
+      handleCoinCountChange(-1*selectedItem.cost)
     }
     setModalVisible(false);
     setSelectedItem(null);
@@ -116,6 +138,10 @@ export default function ShopScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Shop</Text>
+        <View style={styles.coinBalance}>
+          <Text style={styles.coinBalanceIcon}>🪙</Text>
+          <Text style={styles.coinBalanceText}>{currentCoins.toLocaleString()}</Text>
+        </View>
       </View>
       <ScrollView
         style={styles.scrollView}
@@ -167,13 +193,21 @@ export default function ShopScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.confirmButton]}
-                    onPress={handleConfirmPurchase}
-                    activeOpacity={0.8}
+                    style={[
+                      styles.modalButton,
+                      currentCoins >= selectedItem.cost ? styles.confirmButton : styles.disabledButton
+                    ]}
+                    onPress={currentCoins >= selectedItem.cost ? handleConfirmPurchase : undefined}
+                    activeOpacity={currentCoins >= selectedItem.cost ? 0.8 : 1}
+                    disabled={currentCoins < selectedItem.cost}
                   >
                     <Text style={styles.confirmButtonText}>Purchase</Text>
                   </TouchableOpacity>
                 </View>
+
+                {currentCoins < selectedItem.cost && (
+                  <Text style={styles.errorText}>Not enough coins!</Text>
+                )}
               </>
             )}
           </View>
@@ -202,11 +236,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#333',
+  },
+  coinBalance: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff3cd',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#ffc107',
+  },
+  coinBalanceIcon: {
+    fontSize: 20,
+    marginRight: 6,
+  },
+  coinBalanceText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#856404',
   },
   scrollView: {
     flex: 1,
@@ -375,6 +431,9 @@ const styles = StyleSheet.create({
   confirmButton: {
     backgroundColor: '#4CAF50',
   },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+  },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
@@ -384,5 +443,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  errorText: {
+    marginTop: 15,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#dc3545',
+    textAlign: 'center',
   },
 });
