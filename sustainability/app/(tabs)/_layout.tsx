@@ -83,6 +83,7 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBarContainer: {
     position: 'relative',
+    backgroundColor: 'white',
   },
   tabBar: {
     flexDirection: 'row',
@@ -92,6 +93,7 @@ const styles = StyleSheet.create({
     height: 60,
     paddingBottom: 8,
     paddingTop: 8,
+    marginBottom: 10,
   },
   tabItem: {
     flex: 1,
