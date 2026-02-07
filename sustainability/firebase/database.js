@@ -4,6 +4,9 @@ import {
   addDoc,
   getDocs,
   serverTimestamp,
+  onSnapshot,
+  query,
+  orderBy,
 } from "firebase/firestore";
 import { db } from "./config";
 
@@ -13,6 +16,20 @@ import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
 export const getEvents = async () => {
   const snap = await getDocs(collection(db, "events"));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+/** 1b) Real-time listener for events */
+export const subscribeToEvents = (callback) => {
+  const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const events = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    callback(events);
+  }, (error) => {
+    console.error("Error listening to events:", error);
+  });
+
+  return unsubscribe; // Return the unsubscribe function
 };
 
 /** 2) Write: add a single event */
