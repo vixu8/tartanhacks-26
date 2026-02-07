@@ -13,13 +13,17 @@ import DataList from "@/components/DataList";
 import { sampleActivities } from "@/data/sampleActivities";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.7; // Threshold when outer is maxed (0.8 - 0.1)
+// const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.6; // Threshold when outer is maxed
 
 export default function HomeScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [innerScrollEnabled, setInnerScrollEnabled] = useState(false);
 
-  useEffect(() => {
+  const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.7; 
+
+  const backgroundImageSrc = "@/assets/images/tree-placeholder.png"
+
+useEffect(() => {
     const listenerId = scrollY.addListener(({ value }) => {
       // Enable inner scroll when outer scroll reaches threshold
       if (value >= OUTER_SCROLL_THRESHOLD && !innerScrollEnabled) {
@@ -38,7 +42,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {/* Background Image */}
       <ImageBackground
-        source={require("@/assets/images/tree-placeholder.png")}
+        source={require(backgroundImageSrc)}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
@@ -80,16 +84,18 @@ export default function HomeScreen() {
 
             {/* Sticky Title */}
             <View style={styles.stickyHeader}>
-              <Text style={styles.title}>Streak Counter: 19</Text>
+              <Text style={styles.title}>Streak Counter: 1=9</Text>
             </View>
           </View>
+
           <View style={styles.window}>
             {/* Inner Scrollable Content */}
             <ScrollView
               style={styles.innerScrollView}
               showsVerticalScrollIndicator={true}
               bounces={true}
-              scrollEnabled={innerScrollEnabled}
+              scrollEnabled={true}
+              nestedScrollEnabled={innerScrollEnabled}
             >
               <Text style={styles.content}>Your Activity History</Text>
 
@@ -120,6 +126,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: SCREEN_HEIGHT * 0.8,
+    paddingBottom: SCREEN_HEIGHT * .15,
     paddingHorizontal: "5%",
   },
   windowContainer: {
@@ -148,6 +155,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   innerScrollView: {
+    maxHeight: "90%",
     flex: 1,
   },
   scrollIndicator: {
@@ -163,13 +171,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.95)",
     paddingBottom: 8,
   },
-  fadeGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 30,
-  },
   title: {
     fontSize: 32,
     fontWeight: "bold",
@@ -178,15 +179,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     marginBottom: 20,
-  },
-  contentBlock: {
-    padding: 16,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-  contentText: {
-    fontSize: 16,
-    color: "#333",
   },
 });
