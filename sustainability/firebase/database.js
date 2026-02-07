@@ -43,6 +43,32 @@ export const addEvent = async (event) => {
     id: nextId.toString(),
     createdAt: serverTimestamp(),
   });
+
+  // Update points and coins
+  try {
+    // Add the event's points to game/points
+    const pointsRef = doc(db, "game", "points");
+    const pointsSnap = await getDoc(pointsRef);
+    if (!pointsSnap.exists()) {
+      await setDoc(pointsRef, { count: 0 });
+    }
+    await updateDoc(pointsRef, {
+      count: increment(event.points || 0)
+    });
+
+    // Add 5 coins to game/coins
+    const coinsRef = doc(db, "game", "coins");
+    const coinsSnap = await getDoc(coinsRef);
+    if (!coinsSnap.exists()) {
+      await setDoc(coinsRef, { count: 0 });
+    }
+    await updateDoc(coinsRef, {
+      count: increment(5)
+    });
+  } catch (error) {
+    console.error("Error updating points/coins:", error);
+  }
+
   return docRef.id;
 };
 
@@ -173,6 +199,34 @@ export const setCoinCount = async (amount) => {
 // Add coins (can use negative to subtract)
 export const addCoins = async (amount) => {
   const docRef = doc(db, "game", "coins");
+  await updateDoc(docRef, {
+    count: increment(amount)
+  });
+};
+
+// Get points count
+export const getPointsCount = async () => {
+  const docRef = doc(db, "game", "points");
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    return docSnap.data().count || 0;
+  } else {
+    // Initialize if doesn't exist
+    await setDoc(docRef, { count: 0 });
+    return 0;
+  }
+};
+
+// Set points count to specific value
+export const setPointsCount = async (amount) => {
+  const docRef = doc(db, "game", "points");
+  await setDoc(docRef, { count: amount });
+};
+
+// Add points (can use negative to subtract)
+export const addPoints = async (amount) => {
+  const docRef = doc(db, "game", "points");
   await updateDoc(docRef, {
     count: increment(amount)
   });
