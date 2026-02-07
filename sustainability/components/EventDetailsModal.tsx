@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -7,6 +7,12 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  Animated,
+  Easing,
+  Dimensions,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { addEvent } from '../firebase/database';
@@ -19,12 +25,22 @@ type EventDetailsModalProps = {
 };
 
 const COMMON_TAGS = [
-  'transportation',
-  'recycling',
+  'transport',
   'food',
   'shopping',
-  'exercise',
+  'home',
+  'energy',
+  'water',
+  'waste',
+  'reusable',
   'community',
+  'education',
+  'daily',
+  'habit',
+  'low-emission',
+  'high-emission',
+  'eco-friendly',
+  'convenience',
 ];
 
 export default function EventDetailsModal({
@@ -46,10 +62,67 @@ export default function EventDetailsModal({
   const [detailNotes, setDetailNotes] = useState('');
   const [detailTags, setDetailTags] = useState<string[]>([]);
   const [tagQuery, setTagQuery] = useState('');
+  const [debouncedTagQuery, setDebouncedTagQuery] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
+  const [tagInputFocused, setTagInputFocused] = useState(false);
+  const keepTagDropdownOpenRef = useRef(false);
+  const windowHeight = useRef(Dimensions.get('window').height).current;
+  const cardHeight = useRef(new Animated.Value(windowHeight * 0.5)).current;
+  const cardTranslateY = useRef(new Animated.Value(0)).current;
+  const normalizedQuery = debouncedTagQuery.trim().toLowerCase();
+  const filteredTagOptions = useMemo(
+    () =>
+      COMMON_TAGS.filter(
+        (t) => !detailTags.includes(t) && t.includes(normalizedQuery)
+      ),
+    [detailTags, normalizedQuery]
+  );
+  const canAddCustomTag =
+    normalizedQuery.length > 0 &&
+    !detailTags.some((t) => t.toLowerCase() === normalizedQuery) &&
+    !COMMON_TAGS.some((t) => t.toLowerCase() === normalizedQuery);
+  const showTagDropdown = tagInputFocused && (filteredTagOptions.length > 0 || canAddCustomTag);
 
   const toastTimer = useRef<number | null>(null);
   const [toastMessage, setToastMessage] = useState('');
+
+  React.useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const animateCard = (toHeight: number, toTranslateY: number) => {
+      Animated.parallel([
+        Animated.timing(cardHeight, {
+          toValue: toHeight,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.timing(cardTranslateY, {
+          toValue: toTranslateY,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ]).start();
+    };
+
+    const showSub = Keyboard.addListener(showEvent, () =>
+      animateCard(windowHeight * 0.45, 18)
+    );
+    const hideSub = Keyboard.addListener(hideEvent, () =>
+      animateCard(windowHeight * 0.5, 0)
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedTagQuery(tagQuery), 90);
+    return () => clearTimeout(timer);
+  }, [tagQuery]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -58,6 +131,25 @@ export default function EventDetailsModal({
     }
     // @ts-ignore
     toastTimer.current = setTimeout(() => setToastMessage(''), 2500);
+  };
+
+  const resetForm = () => {
+    setDetailTitle(eventTitle);
+    setDetailDate('');
+    setDetailTime('');
+    setMeridiem('AM');
+    setDetailNotes('');
+    setDetailTags([]);
+    setTagQuery('');
+    setTagInputFocused(false);
+    setShowCalendar(false);
+    cardHeight.setValue(windowHeight * 0.5);
+    cardTranslateY.setValue(0);
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    onClose();
   };
 
   const handleTimeChange = (input: string) => {
@@ -96,6 +188,35 @@ export default function EventDetailsModal({
     setDetailTime(formatted);
   };
 
+  const handleAddTag = useCallback((rawTag: string) => {
+    const tag = rawTag.trim();
+    if (!tag) return;
+
+    keepTagDropdownOpenRef.current = true;
+    setDetailTags((prev) => {
+      if (prev.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, tag];
+    });
+    setTagQuery('');
+    setTagInputFocused(true);
+  }, []);
+
+  const renderTagOption = useCallback(
+    (t: string) => (
+      <Pressable
+        key={t}
+        style={styles.tagDropdownRow}
+        onPress={() => handleAddTag(t)}
+      >
+        <Text style={styles.tagDropdownText}>{t}</Text>
+        <Text style={styles.tagPlusSymbol}>+</Text>
+      </Pressable>
+    ),
+    [handleAddTag]
+  );
+
   const handleSave = async () => {
     const title = detailTitle.trim();
     if (!title) {
@@ -124,104 +245,183 @@ export default function EventDetailsModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Event Details</Text>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancel}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoiding}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'position'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View
+            style={[
+              styles.modalCard,
+              { height: cardHeight, transform: [{ translateY: cardTranslateY }] },
+            ]}
+          >
+            <Text style={styles.modalTitle}>Event Details</Text>
 
-          <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            <Text style={styles.label}>Title</Text>
-            <TextInput style={styles.input} placeholder="Title" placeholderTextColor="#9ca3af" value={detailTitle} onChangeText={setDetailTitle} />
+            <View style={styles.scrollArea}>
+              <ScrollView
+                style={[
+                  styles.container,
+                  Platform.OS === 'web' ? ({ overscrollBehavior: 'contain' } as any) : null,
+                ]}
+                contentContainerStyle={styles.containerContent}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+                scrollEnabled={!showTagDropdown}
+                bounces={false}
+                overScrollMode="never"
+              >
+              <Text style={styles.label}>Title</Text>
+              <TextInput style={styles.input} placeholder="Title" placeholderTextColor="#9ca3af" value={detailTitle} onChangeText={setDetailTitle} />
 
-            <View style={styles.row}>
-              <View style={styles.halfColumn}>
-                <Text style={styles.label}>Date</Text>
-                <Pressable 
-                  style={[styles.input, styles.halfInput, styles.dateButton]}
-                  onPress={() => setShowCalendar(true)}
-                >
-                  <Text style={[styles.dateButtonText, { color: detailDate ? '#111827' : '#9ca3af' }]}>{detailDate || 'Select date'}</Text>
-                </Pressable>
-              </View>
-              <View style={styles.halfColumn}>
-                <Text style={styles.label}>Time</Text>
-                <View style={styles.timeRow}>
-                  <TextInput style={[styles.input, styles.timeInput]} placeholder="HH:MM" placeholderTextColor="#9ca3af" value={detailTime} onChangeText={handleTimeChange} keyboardType="decimal-pad" maxLength={5} />
+              <View style={styles.row}>
+                <View style={styles.halfColumn}>
+                  <Text style={styles.label}>Date</Text>
                   <Pressable 
-                    style={styles.meridiemButton}
-                    onPress={() => setMeridiem(meridiem === 'AM' ? 'PM' : 'AM')}
+                    style={[styles.input, styles.halfInput, styles.dateButton, styles.compactRowInput]}
+                    onPress={() => setShowCalendar(true)}
                   >
-                    <Text style={styles.meridiemText}>{meridiem}</Text>
+                    <Text style={[styles.dateButtonText, { color: detailDate ? '#111827' : '#9ca3af' }]}>{detailDate || 'Select date'}</Text>
                   </Pressable>
                 </View>
-              </View>
-            </View>
-
-            <View style={styles.tagsSection}>
-              <Text style={styles.label}>Tags</Text>
-              <TextInput style={styles.input} placeholder="Add tags (search or type then press +)" placeholderTextColor="#9ca3af" value={tagQuery} onChangeText={setTagQuery} />
-              {tagQuery.length > 0 && (
-                <View style={styles.tagDropdown}>
-                  {COMMON_TAGS.filter((t) => t.includes(tagQuery.toLowerCase())).map((t) => (
-                    <Pressable
-                      key={t}
-                      style={styles.tagRow}
-                      onPress={() => {
-                        if (!detailTags.includes(t)) setDetailTags((s) => [...s, t]);
-                        setTagQuery('');
-                      }}
+                <View style={styles.halfColumn}>
+                  <Text style={styles.label}>Time</Text>
+                  <View style={styles.timeRow}>
+                    <TextInput style={[styles.input, styles.timeInput, styles.compactRowInput]} placeholder="HH:MM" placeholderTextColor="#9ca3af" value={detailTime} onChangeText={handleTimeChange} keyboardType="decimal-pad" maxLength={5} />
+                    <Pressable 
+                      style={styles.meridiemButton}
+                      onPress={() => setMeridiem(meridiem === 'AM' ? 'PM' : 'AM')}
                     >
-                      <Text>{t}</Text>
-                    </Pressable>
-                  ))}
-                  <Pressable
-                    style={styles.tagRow}
-                    onPress={() => {
-                      const t = tagQuery.trim();
-                      if (t && !detailTags.includes(t)) setDetailTags((s) => [...s, t]);
-                      setTagQuery('');
-                    }}
-                  >
-                    <Text>Add "{tagQuery}"</Text>
-                  </Pressable>
-                </View>
-              )}
-
-              <View style={styles.tagsContainer}>
-                {detailTags.map((t) => (
-                  <View key={t} style={styles.tagPill}>
-                    <Text style={styles.tagText}>{t}</Text>
-                    <Pressable onPress={() => setDetailTags((s) => s.filter((x) => x !== t))}>
-                      <Text style={styles.tagRemove}>×</Text>
+                      <Text style={styles.meridiemText}>{meridiem}</Text>
                     </Pressable>
                   </View>
-                ))}
+                </View>
               </View>
+
+              <View style={styles.tagsSection}>
+                <Text style={styles.label}>Tags</Text>
+                <View style={styles.tagInputWrap}>
+                  <View style={styles.tagInputRow}>
+                    <TextInput 
+                      style={[styles.input, styles.tagInput]} 
+                      placeholder="Search or add a tag"
+                      placeholderTextColor="#9ca3af" 
+                      value={tagQuery} 
+                      onChangeText={setTagQuery}
+                      onFocus={() => setTagInputFocused(true)}
+                      onSubmitEditing={() => {
+                        if (canAddCustomTag) {
+                          handleAddTag(tagQuery);
+                        }
+                      }}
+                      returnKeyType="done"
+                      onBlur={() =>
+                        setTimeout(() => {
+                          if (keepTagDropdownOpenRef.current) {
+                            keepTagDropdownOpenRef.current = false;
+                            return;
+                          }
+                          setTagInputFocused(false);
+                        }, 180)
+                      }
+                    />
+                    <Pressable
+                      style={styles.comboToggleButton}
+                      onPress={() => setTagInputFocused((prev) => !prev)}
+                    >
+                      <Text style={styles.comboToggleText}>{tagInputFocused ? '▴' : '▾'}</Text>
+                    </Pressable>
+                  </View>
+                  
+                  {showTagDropdown && (
+                    <View
+                      style={styles.tagDropdown}
+                      // Prevent wheel/touch bubbling to the parent scroll container while using the dropdown.
+                      {...(Platform.OS === 'web'
+                        ? ({
+                            onWheelCapture: (e: any) => {
+                              keepTagDropdownOpenRef.current = true;
+                              e.stopPropagation();
+                            },
+                            onTouchMoveCapture: (e: any) => {
+                              keepTagDropdownOpenRef.current = true;
+                              e.stopPropagation();
+                            },
+                          } as any)
+                        : {})}
+                    >
+                      <ScrollView
+                        style={[
+                          styles.tagDropdownScroll,
+                          Platform.OS === 'web' ? ({ overscrollBehavior: 'contain' } as any) : null,
+                        ]}
+                        nestedScrollEnabled
+                        keyboardShouldPersistTaps="handled"
+                        onScrollBeginDrag={() => {
+                          keepTagDropdownOpenRef.current = true;
+                        }}
+                        onTouchStart={() => {
+                          keepTagDropdownOpenRef.current = true;
+                        }}
+                      >
+                        {canAddCustomTag && (
+                          <Pressable
+                            style={[styles.tagDropdownRow, styles.addCustomRow]}
+                            onPress={() => handleAddTag(tagQuery)}
+                          >
+                            <Text style={styles.tagDropdownText}>Add "{tagQuery.trim()}"</Text>
+                            <Text style={styles.tagPlusSymbol}>+</Text>
+                          </Pressable>
+                        )}
+                        {filteredTagOptions.map(renderTagOption)}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+
+                {detailTags.length > 0 && (
+                  <View style={styles.tagsContainer}>
+                    {detailTags.map((t) => (
+                      <View key={t} style={styles.tagPill}>
+                        <Text style={styles.tagText}>{t}</Text>
+                        <Pressable onPress={() => setDetailTags((s) => s.filter((x) => x !== t))}>
+                          <Text style={styles.tagRemove}>×</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={[styles.input, styles.notesInput]}
+                placeholder="Notes"
+                placeholderTextColor="#9ca3af"
+                value={detailNotes}
+                onChangeText={setDetailNotes}
+                multiline
+                numberOfLines={4}
+              />
+              </ScrollView>
             </View>
 
-            <Text style={styles.label}>Notes</Text>
-            <TextInput
-              style={[styles.input, styles.notesInput]}
-              placeholder="Notes"
-              placeholderTextColor="#9ca3af"
-              value={detailNotes}
-              onChangeText={setDetailNotes}
-              multiline
-              numberOfLines={4}
-            />
-          </ScrollView>
-
-          <View style={styles.modalActions}>
-            <Pressable style={[styles.actionButton, styles.cancelButton]} onPress={onClose}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            <Pressable style={[styles.actionButton, styles.saveButton]} onPress={handleSave}>
-              <Text style={styles.saveText}>Enter</Text>
-            </Pressable>
-          </View>
+            {!showTagDropdown && (
+              <View style={styles.modalActions}>
+                <Pressable style={[styles.actionButton, styles.cancelButton]} onPress={handleCancel}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </Pressable>
+                <Pressable style={[styles.actionButton, styles.saveButton]} onPress={handleSave}>
+                  <Text style={styles.saveText}>Enter</Text>
+                </Pressable>
+              </View>
+            )}
+          </Animated.View>
         </View>
-      </View>
-
+      </KeyboardAvoidingView>
       {toastMessage ? (
         <View style={styles.toast} pointerEvents="none">
           <Text style={styles.toastText}>{toastMessage}</Text>
@@ -258,9 +458,13 @@ export default function EventDetailsModal({
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  keyboardAvoiding: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -268,11 +472,18 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 380,
-    height: '50%',
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     justifyContent: 'space-between',
+    position: 'relative',
+    overflow: 'hidden',
+    minHeight: 0,
+  },
+  scrollArea: {
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
   },
   modalTitle: {
     fontSize: 20,
@@ -281,6 +492,10 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    minHeight: 0,
+  },
+  containerContent: {
+    paddingBottom: 4,
   },
   input: {
     borderWidth: 1,
@@ -297,7 +512,10 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 6,
+    marginBottom: 2,
+  },
+  compactRowInput: {
+    marginBottom: 0,
   },
   halfColumn: {
     flex: 1,
@@ -309,7 +527,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 2,
   },
   timeInput: {
     flex: 1,
@@ -376,25 +594,92 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   tagDropdown: {
+    position: 'absolute',
+    top: '100%',
+    marginTop: 4,
+    left: 0,
+    right: 0,
     backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 8,
-    marginTop: 6,
-    maxHeight: 120,
+    maxHeight: 340,
+    zIndex: 120,
+    elevation: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  tagDropdownScroll: {
+    maxHeight: 340,
+  },
+  tagInputWrap: {
+    position: 'relative',
+    zIndex: 110,
+  },
+  tagInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tagInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  comboToggleButton: {
+    width: 38,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f9fafb',
+  },
+  comboToggleText: {
+    color: '#374151',
+    fontSize: 14,
+    fontWeight: '700',
   },
   tagRow: {
     padding: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
+  tagDropdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    minHeight: 48,
+  },
+  addCustomRow: {
+    backgroundColor: '#ecfdf5',
+  },
+  tagDropdownText: {
+    fontSize: 15,
+    color: '#111827',
+    flex: 1,
+  },
+  tagPlusSymbol: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#22c55e',
+    marginLeft: 8,
+  },
   tagsSection: {
     marginBottom: 0,
+    position: 'relative',
+    zIndex: 100,
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 12,
     marginBottom: 0,
   },
   tagPill: {
