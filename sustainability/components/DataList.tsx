@@ -8,6 +8,7 @@ export interface DataItem {
   points: number;
   description?: string;
   date?: string;
+  tags?: string[];
 }
 
 interface DataListProps {
