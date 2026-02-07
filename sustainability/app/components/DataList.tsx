@@ -22,16 +22,18 @@ export default function DataList({ data }: DataListProps) {
   // Sort data by date and time, most recent first
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => {
-      // If both items have date and time, compare them
-      if (a.date && a.time && b.date && b.time) {
-        const dateTimeA = new Date(`${a.date} ${a.time}`);
-        const dateTimeB = new Date(`${b.date} ${b.time}`);
-        return dateTimeB.getTime() - dateTimeA.getTime(); // Descending order (most recent first)
+      // Create date objects for comparison
+      const dateA = a.date ? new Date(`${a.date}${a.time ? ` ${a.time}` : " 00:00:00"}`) : null;
+      const dateB = b.date ? new Date(`${b.date}${b.time ? ` ${b.time}` : " 00:00:00"}`) : null;
+
+      // If both have dates, compare them
+      if (dateA && dateB) {
+        return dateB.getTime() - dateA.getTime(); // Descending order (most recent first)
       }
-      // If only one has date/time, prioritize the one with date/time
-      if (a.date && a.time) return -1;
-      if (b.date && b.time) return 1;
-      // If both missing date/time, maintain original order
+      // If only one has a date, prioritize the one with a date
+      if (dateA) return -1;
+      if (dateB) return 1;
+      // If both missing date, maintain original order
       return 0;
     });
   }, [data]);

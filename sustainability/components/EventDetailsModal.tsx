@@ -236,7 +236,7 @@ export default function EventDetailsModal({
         title,
         points: 0, // Default points value
         description: detailNotes || '',
-        time: detailTime,
+        time: `${detailTime} ${meridiem}`,
         tags: detailTags
       };
       if (detailDate) payload.date = detailDate;
