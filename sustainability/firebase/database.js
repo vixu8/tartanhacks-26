@@ -4,10 +4,21 @@ import {
   addDoc,
   getDocs,
   serverTimestamp,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  increment,
 } from "firebase/firestore";
 import { db } from "./config";
+import { applyImpactToUser } from "../lib/points/applyImpact";
+import { getImpactForEvent } from "../lib/points/impacts";
+import { pointsToTreeStage } from "../lib/points/treeStage";
 
-import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+// Repo currently has no auth session hook; use a stable per-device/app user key until auth is added.
+const DEFAULT_USER_ID = "demo-user";
+
+export const getCurrentUserId = () => DEFAULT_USER_ID;
 
 /** 1) Read: get all events (fetch once) */
 export const getEvents = async () => {
@@ -17,12 +28,39 @@ export const getEvents = async () => {
 
 /** 2) Write: add a single event */
 export const addEvent = async (event) => {
+  const impact = getImpactForEvent({
+    kind: event?.kind,
+    name: event?.name,
+    title: event?.title,
+    sustainable: event?.sustainable,
+  });
+
   // event should include: title, lat, lng (numbers). Others optional.
   const docRef = await addDoc(collection(db, "events"), {
     ...event,
+    impact,
     createdAt: serverTimestamp(),
   });
+
+  await applyImpactToUser({
+    db,
+    userId: getCurrentUserId(),
+    impact,
+    eventId: docRef.id,
+  });
+
   return docRef.id;
+};
+
+export const getCurrentUserTreeState = async () => {
+  const userRef = doc(db, "users", getCurrentUserId());
+  const userSnap = await getDoc(userRef);
+  const rawPoints = userSnap.exists() ? userSnap.data()?.points : 0;
+  const points = typeof rawPoints === "number" ? rawPoints : 0;
+
+  return {
+    treeStage: pointsToTreeStage(points),
+  };
 };
 
 /** 3) Seed: add a bunch of fake events for demo */

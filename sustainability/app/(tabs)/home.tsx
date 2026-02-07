@@ -4,6 +4,7 @@ import {
   Animated,
   Dimensions,
   ImageBackground,
+  type ImageSourcePropType,
   Linking,
   Pressable,
   ScrollView,
@@ -13,6 +14,9 @@ import {
 } from "react-native";
 
 import DataList from "@/components/DataList";
+import { getCurrentUserTreeState } from "@/firebase/database";
+import type { TreeStage } from "@/lib/points/treeStage";
+import { treeStageToImage } from "@/lib/ui/treeImages";
 
 //import DataList from "@/app/components/DataList";
 
@@ -80,9 +84,43 @@ export default function HomeScreen() {
   const [visible, setVisible] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [treeStage, setTreeStage] = useState<TreeStage>(2);
 
   const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.7;
-  const backgroundImageSrc = "@/assets/images/tree-placeholder.png";
+  const treeImagePath = treeStageToImage(treeStage);
+
+  const treeImageSource: ImageSourcePropType = (() => {
+    switch (treeImagePath) {
+      case "../../assets/images/android-icon-background.png":
+        return require("../../assets/images/android-icon-background.png");
+      case "../../assets/images/android-icon-foreground.png":
+        return require("../../assets/images/android-icon-foreground.png");
+      case "../../assets/images/icon.png":
+        return require("../../assets/images/icon.png");
+      case "../../assets/images/splash-icon.png":
+        return require("../../assets/images/splash-icon.png");
+      case "../../assets/images/tree-placeholder.png":
+      default:
+        return require("../../assets/images/tree-placeholder.png");
+    }
+  })();
+
+  useEffect(() => {
+    let mounted = true;
+    const loadTreeState = async () => {
+      try {
+        const { treeStage: stage } = await getCurrentUserTreeState();
+        if (mounted) setTreeStage(stage);
+      } catch {
+        if (mounted) setTreeStage(2);
+      }
+    };
+
+    void loadTreeState();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -123,7 +161,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={require(backgroundImageSrc)}
+        source={treeImageSource}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
