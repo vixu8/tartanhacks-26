@@ -12,9 +12,13 @@ import {
   View,
 } from "react-native";
 
-import DataList from "@/components/DataList";
+import DataList, { DataItem } from "@/components/DataList";
 
-import { sampleActivities } from "@/data/sampleActivities";
+
+//import DataList from "@/app/components/DataList";
+
+import { subscribeToEvents } from "@/firebase/database";
+
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -78,6 +82,7 @@ export default function HomeScreen() {
   const [visible, setVisible] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [activities, setActivities] = useState<DataItem[]>([]);
 
   const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.7;
   const backgroundImageSrc = "@/assets/images/tree-placeholder.png";
@@ -87,6 +92,25 @@ export default function HomeScreen() {
     const randomIndex = Math.floor(Math.random() * SUSTAINABILITY_ITEMS.length);
     setFactIndex(randomIndex);
   }, []); // Empty dependency array means this runs once when component mounts
+    // Set up real-time listener for events
+    const unsubscribe = subscribeToEvents((events: DataItem[]) => {
+      setActivities(events);
+    });
+
+    // Cleanup: unsubscribe when component unmounts
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFactIndex((prev) => (prev + 1) % SUSTAINABILITY_ITEMS.length);
+      setVisible(true);
+      setExpanded(false);
+      setMinimized(false);
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const listenerId = scrollY.addListener(({ value }) => {
@@ -194,7 +218,7 @@ export default function HomeScreen() {
           <View style={styles.windowTop}>
             <View style={styles.scrollIndicator} />
             <View style={styles.stickyHeader}>
-              <Text style={styles.title}>Streak Counter: 19</Text>
+              <Text style={styles.title}>Streak Counter: 0</Text>
             </View>
           </View>
 
@@ -207,7 +231,7 @@ export default function HomeScreen() {
               nestedScrollEnabled={innerScrollEnabled}
             >
               <Text style={styles.content}>Your Activity History</Text>
-              <DataList data={sampleActivities} />
+              <DataList data={activities} />
             </ScrollView>
           </View>
         </View>

@@ -4,12 +4,13 @@ import { DataItem } from "@/components/DataList";
 
 
 export const sampleActivities: DataItem[] = [
-  {
+    {
     id: "1",
     title: "Used reusable water bottle",
     points: 10,
     description: "Avoided single-use plastic by bringing a reusable water bottle to work.",
     date: "2026-02-07",
+    tags: ["water"],
   },
   {
     id: "2",
@@ -17,6 +18,7 @@ export const sampleActivities: DataItem[] = [
     points: 15,
     description: "Shared a ride with 3 colleagues, reducing carbon emissions.",
     date: "2026-02-07",
+    tags: ["transport"],
   },
   {
     id: "3",
@@ -24,6 +26,7 @@ export const sampleActivities: DataItem[] = [
     points: -5,
     description: "Could have walked or biked for this short trip.",
     date: "2026-02-07",
+    tags: ["transport"],
   },
   {
     id: "4",
@@ -31,6 +34,7 @@ export const sampleActivities: DataItem[] = [
     points: 5,
     description: "Properly sorted and recycled all paper materials.",
     date: "2026-02-06",
+    tags: ["food", "waste"],
   },
   {
     id: "5",
@@ -38,6 +42,7 @@ export const sampleActivities: DataItem[] = [
     points: -3,
     description: "Forgot to bring reusable shopping bags.",
     date: "2026-02-06",
+    tags: ["water", "waste"],
   },
   {
     id: "6",
@@ -45,6 +50,7 @@ export const sampleActivities: DataItem[] = [
     points: 8,
     description: "Diverted organic waste from landfill.",
     date: "2026-02-05",
+    tags: ["food", "waste"],
   },
   {
     id: "7",
@@ -52,6 +58,7 @@ export const sampleActivities: DataItem[] = [
     points: 12,
     description: "Used the bus instead of driving.",
     date: "2026-02-05",
+    tags: ["transport"],
   },
   {
     id: "8",
@@ -59,6 +66,7 @@ export const sampleActivities: DataItem[] = [
     points: -4,
     description: "Wasted electricity by leaving multiple lights on.",
     date: "2026-02-04",
+    tags: ["water"],
   },
     {
     id: "9",
@@ -66,6 +74,7 @@ export const sampleActivities: DataItem[] = [
     points: -1,
     description: "ectricity by leaving multiple lights on.",
     date: "2026-02-09",
+    tags: ["food"],
   },
     {
     id: "10",
@@ -73,6 +82,7 @@ export const sampleActivities: DataItem[] = [
     points: 4,
     description: "Wasted elecaving multiple lights on.",
     date: "2026-02-10",
+    tags: ["transport"],
   },
     {
     id: "11",
@@ -80,6 +90,7 @@ export const sampleActivities: DataItem[] = [
     points: 10,
     description: "Wasple lights on.",
     date: "2026-02-12",
+    tags: ["water"],
   },
     {
     id: "12",
@@ -87,6 +98,7 @@ export const sampleActivities: DataItem[] = [
     points: -4,
     description: "Wasted electricity by leaving multiple lights on.",
     date: "2026-02-04",
+    tags: ["food"],
   },
     {
     id: "13",
@@ -94,6 +106,7 @@ export const sampleActivities: DataItem[] = [
     points: -4,
     description: "Wasted electricity by leaving multiple lights on.",
     date: "2026-02-04",
+    tags: ["transport"],
   },
     {
     id: "14",
@@ -101,5 +114,6 @@ export const sampleActivities: DataItem[] = [
     points: -4,
     description: "Wasted electricity by leaving multiple lights on.",
     date: "2026-02-04",
+    tags: ["water"],
   },
-];
+  ];

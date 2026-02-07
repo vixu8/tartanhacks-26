@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from "react-native";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import DataRow from "./DataRow";
 
 export interface DataItem {
@@ -8,6 +8,8 @@ export interface DataItem {
   points: number;
   description?: string;
   date?: string;
+  time?: string;
+  tags?: string[];
 }
 
 interface DataListProps {
@@ -16,6 +18,25 @@ interface DataListProps {
 
 export default function DataList({ data }: DataListProps) {
   const [selectedItem, setSelectedItem] = useState<DataItem | null>(null);
+
+  // Sort data by date and time, most recent first
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      // Create date objects for comparison
+      const dateA = a.date ? new Date(`${a.date}${a.time ? ` ${a.time}` : " 00:00:00"}`) : null;
+      const dateB = b.date ? new Date(`${b.date}${b.time ? ` ${b.time}` : " 00:00:00"}`) : null;
+
+      // If both have dates, compare them
+      if (dateA && dateB) {
+        return dateB.getTime() - dateA.getTime(); // Descending order (most recent first)
+      }
+      // If only one has a date, prioritize the one with a date
+      if (dateA) return -1;
+      if (dateB) return 1;
+      // If both missing date, maintain original order
+      return 0;
+    });
+  }, [data]);
 
   const handleRowPress = (item: DataItem) => {
     setSelectedItem(item);
@@ -28,7 +49,7 @@ export default function DataList({ data }: DataListProps) {
   return (
     <View style={styles.container}>
       {/* List of Data Rows */}
-      {data.map((item) => (
+      {sortedData.map((item) => (
         <DataRow
           key={item.id}
           title={item.title}
@@ -80,6 +101,28 @@ export default function DataList({ data }: DataListProps) {
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Date:</Text>
                     <Text style={styles.detailValue}>{selectedItem.date}</Text>
+                  </View>
+                )}
+
+                {/* Time */}
+                {selectedItem.time && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Time:</Text>
+                    <Text style={styles.detailValue}>{selectedItem.time}</Text>
+                  </View>
+                )}
+
+                {/* Tags */}
+                {selectedItem.tags && selectedItem.tags.length > 0 && (
+                  <View style={styles.tagsContainer}>
+                    <Text style={styles.detailLabel}>Tags:</Text>
+                    <View style={styles.tagsWrapper}>
+                      {selectedItem.tags.map((tag, index) => (
+                        <View key={index} style={styles.tagPill}>
+                          <Text style={styles.tagText}>{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
                 )}
 
@@ -205,5 +248,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     lineHeight: 24,
+  },
+  tagsContainer: {
+    marginBottom: 16,
+  },
+  tagsWrapper: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 8,
+  },
+  tagPill: {
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  tagText: {
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "500",
   },
 });
