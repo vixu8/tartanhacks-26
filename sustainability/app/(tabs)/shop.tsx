@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal } from 'react-native';
 import { useEffect, useState } from 'react';
 import { addCoins, getCoinCount } from '@/firebase/database';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -9,7 +9,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface ShopItem {
   id: string;
   name: string;
-  imageUrl: string;
+  icon: string;
   cost: number;
   description: string;
 }
@@ -61,14 +61,7 @@ export default function ShopScreen() {
     setSelectedItem(null);
   };
 
-  // Using Noto Emoji style for cute, recognizable images
-  const getImageUrl = (emoji: string) => {
-    // Use OpenMoji for cute, flat design emojis
-    const emojiCode = emoji.codePointAt(0)?.toString(16).toUpperCase().padStart(4, '0');
-    return `https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/color/618x618/${emojiCode}.png`;
-  };
-
-  // Shop data with world customization items using cute images
+  // Shop data with world customization items
   const shopSections: ShopSection[] = [
     {
       title: 'Plants & Flowers',
@@ -76,56 +69,56 @@ export default function ShopScreen() {
         { 
           id: '1', 
           name: 'Sunflowers', 
-          imageUrl: getImageUrl('🌻'), 
+          icon: '🌻', 
           cost: 75,
           description: 'Add a cheerful patch of sunflowers around your tree. They sway gently in the breeze!'
         },
         { 
           id: '2', 
           name: 'Cherry Blossoms', 
-          imageUrl: getImageUrl('🌸'), 
+          icon: '🌸', 
           cost: 120,
           description: 'Beautiful pink cherry blossoms that bloom at the base of your tree for 7 days.'
         },
         { 
           id: '3', 
           name: 'Tulip Garden', 
-          imageUrl: getImageUrl('🌷'), 
+          icon: '🌷', 
           cost: 90,
           description: 'A colorful bed of tulips in red, yellow, and pink. Perfect for spring vibes!'
         },
         { 
           id: '4', 
           name: 'Rose Bush', 
-          imageUrl: getImageUrl('🌹'), 
+          icon: '🌹', 
           cost: 100,
           description: 'Elegant red roses grow beside your tree, adding romance to your world.'
         },
         { 
           id: '5', 
           name: 'Wildflower Meadow', 
-          imageUrl: getImageUrl('🌼'), 
+          icon: '🌼', 
           cost: 85,
           description: 'A natural meadow of mixed wildflowers spreads across your landscape.'
         },
         { 
           id: '6', 
           name: 'Lotus Pond', 
-          imageUrl: getImageUrl('🪷'), 
+          icon: '🪷', 
           cost: 150,
           description: 'Add a serene pond with floating lotus flowers near your tree.'
         },
         { 
           id: '7', 
           name: 'Mushroom Circle', 
-          imageUrl: getImageUrl('🍄'), 
+          icon: '🍄', 
           cost: 65,
           description: 'Whimsical mushrooms grow in a fairy ring around your tree base.'
         },
         { 
           id: '8', 
           name: 'Cactus Garden', 
-          imageUrl: getImageUrl('🌵'), 
+          icon: '🌵', 
           cost: 80,
           description: 'Desert cacti add a unique southwestern touch to your environment.'
         },
@@ -137,56 +130,56 @@ export default function ShopScreen() {
         { 
           id: '9', 
           name: 'Butterfly Swarm', 
-          imageUrl: getImageUrl('🦋'), 
+          icon: '🦋', 
           cost: 110,
           description: 'Colorful butterflies flutter around your tree for 3 days, adding life and movement.'
         },
         { 
           id: '10', 
           name: 'Bird Nest', 
-          imageUrl: getImageUrl('🐦'), 
+          icon: '🐦', 
           cost: 95,
           description: 'A family of birds makes a nest in your tree. Hear them chirp throughout the day!'
         },
         { 
           id: '11', 
           name: 'Friendly Squirrel', 
-          imageUrl: getImageUrl('🐿️'), 
+          icon: '🐿️', 
           cost: 120,
           description: 'An adorable squirrel scampers up and down your tree, collecting acorns.'
         },
         { 
           id: '12', 
           name: 'Ladybugs', 
-          imageUrl: getImageUrl('🐞'), 
+          icon: '🐞', 
           cost: 70,
           description: 'Lucky ladybugs crawl on your tree leaves, bringing good fortune.'
         },
         { 
           id: '13', 
           name: 'Bunny Visitor', 
-          imageUrl: getImageUrl('🐰'), 
+          icon: '🐰', 
           cost: 100,
           description: 'A cute bunny hops around your tree, nibbling on grass and flowers.'
         },
         { 
           id: '14', 
           name: 'Honeybees', 
-          imageUrl: getImageUrl('🐝'), 
+          icon: '🐝', 
           cost: 85,
           description: 'Busy bees buzz around pollinating your flowers and making honey.'
         },
         { 
           id: '15', 
           name: 'Garden Snail', 
-          imageUrl: getImageUrl('🐌'), 
+          icon: '🐌', 
           cost: 60,
           description: 'A peaceful snail slowly explores the base of your tree, leaving a sparkly trail.'
         },
         { 
           id: '16', 
           name: 'Owl Perch', 
-          imageUrl: getImageUrl('🦉'), 
+          icon: '🦉', 
           cost: 130,
           description: 'A wise owl sits in your tree at night, hooting softly under the stars.'
         },
@@ -198,56 +191,56 @@ export default function ShopScreen() {
         { 
           id: '17', 
           name: 'Rainbow', 
-          imageUrl: getImageUrl('🌈'), 
+          icon: '🌈', 
           cost: 200,
           description: 'A beautiful rainbow arcs over your tree for 24 hours. Pure magical vibes!'
         },
         { 
           id: '18', 
           name: 'Gentle Rain', 
-          imageUrl: getImageUrl('🌧️'), 
+          icon: '🌧️', 
           cost: 90,
           description: 'Soft rain falls for a day, making everything fresh and helping your plants grow.'
         },
         { 
           id: '19', 
           name: 'Sunshine Rays', 
-          imageUrl: getImageUrl('☀️'), 
+          icon: '☀️', 
           cost: 80,
           description: 'Bright sun rays beam down through your tree branches, creating a warm glow.'
         },
         { 
           id: '20', 
           name: 'Starry Night', 
-          imageUrl: getImageUrl('✨'), 
+          icon: '✨', 
           cost: 150,
           description: 'Transform your sky into a stunning starry night with twinkling stars for 24 hours.'
         },
         { 
           id: '21', 
           name: 'Cloud Shapes', 
-          imageUrl: getImageUrl('☁️'), 
+          icon: '☁️', 
           cost: 70,
           description: 'Fun shaped clouds (hearts, animals, etc.) float by in your sky.'
         },
         { 
           id: '22', 
           name: 'Northern Lights', 
-          imageUrl: getImageUrl('🌌'), 
+          icon: '🌌', 
           cost: 250,
           description: 'Spectacular aurora borealis dances in your night sky for 2 days. Breathtaking!'
         },
         { 
           id: '23', 
           name: 'Fireflies', 
-          imageUrl: getImageUrl('🪲'), 
+          icon: '✨', 
           cost: 110,
           description: 'Magical fireflies illuminate your tree at dusk, creating a fairy-tale atmosphere.'
         },
         { 
           id: '24', 
           name: 'Shooting Stars', 
-          imageUrl: getImageUrl('💫'), 
+          icon: '💫', 
           cost: 140,
           description: 'Watch shooting stars streak across your night sky. Make a wish!'
         },
@@ -259,56 +252,56 @@ export default function ShopScreen() {
         { 
           id: '25', 
           name: 'Fairy Lights', 
-          imageUrl: getImageUrl('🎄'), 
+          icon: '💡', 
           cost: 160,
           description: 'String twinkling fairy lights through your tree branches. Perfect for evenings!'
         },
         { 
           id: '26', 
           name: 'Wind Chimes', 
-          imageUrl: getImageUrl('🎐'), 
+          icon: '🎐', 
           cost: 95,
           description: 'Hang beautiful wind chimes that make peaceful sounds in the breeze.'
         },
         { 
           id: '27', 
           name: 'Garden Gnome', 
-          imageUrl: getImageUrl('🧙'), 
+          icon: '🧙', 
           cost: 120,
           description: 'A cheerful garden gnome keeps watch over your tree and garden.'
         },
         { 
           id: '28', 
           name: 'Birdhouse', 
-          imageUrl: getImageUrl('🏠'), 
+          icon: '🏠', 
           cost: 85,
           description: 'Hang a cozy birdhouse where feathered friends can rest and nest.'
         },
         { 
           id: '29', 
           name: 'Seasonal Wreath', 
-          imageUrl: getImageUrl('🎀'), 
+          icon: '🎀', 
           cost: 100,
           description: 'A decorative wreath that changes with the seasons adorns your tree.'
         },
         { 
           id: '30', 
           name: 'Stone Path', 
-          imageUrl: getImageUrl('🪨'), 
+          icon: '🪨', 
           cost: 110,
           description: 'A charming stone pathway leads up to your tree through the garden.'
         },
         { 
           id: '31', 
           name: 'Lantern Post', 
-          imageUrl: getImageUrl('🏮'), 
+          icon: '🏮', 
           cost: 130,
           description: 'An elegant lantern post lights up your tree area when the sun sets.'
         },
         { 
           id: '32', 
           name: 'Swing', 
-          imageUrl: getImageUrl('🛝'), 
+          icon: '🎪', 
           cost: 175,
           description: 'Hang a wooden swing from your tree branch. Peaceful and nostalgic!'
         },
@@ -323,12 +316,8 @@ export default function ShopScreen() {
       onPress={() => handleItemPress(item)}
       activeOpacity={0.7}
     >
-      <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: item.imageUrl }} 
-          style={styles.itemImage}
-          resizeMode="contain"
-        />
+      <View style={styles.iconContainer}>
+        <Text style={styles.itemIcon}>{item.icon}</Text>
       </View>
       <View style={styles.itemDetails}>
         <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
@@ -353,7 +342,6 @@ export default function ShopScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Shop</Text>
         <View style={styles.coinBalance}>
-          <Text style={styles.coinIcon}>🪙</Text>
           <Text style={styles.coinBalanceText}>{currentCoins.toLocaleString()}</Text>
         </View>
       </View>
@@ -376,18 +364,13 @@ export default function ShopScreen() {
           <View style={styles.modalContent}>
             {selectedItem && (
               <>
-                <View style={styles.modalImageContainer}>
-                  <Image 
-                    source={{ uri: selectedItem.imageUrl }} 
-                    style={styles.modalImage}
-                    resizeMode="contain"
-                  />
+                <View style={styles.modalIconContainer}>
+                  <Text style={styles.modalIcon}>{selectedItem.icon}</Text>
                 </View>
 
                 <Text style={styles.modalItemName}>{selectedItem.name}</Text>
 
                 <View style={styles.modalCoinContainer}>
-                  <Text style={styles.modalCoinIcon}>🪙</Text>
                   <Text style={styles.modalCoinCost}>{selectedItem.cost}</Text>
                 </View>
 
@@ -469,10 +452,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#66BB6A',
   },
-  coinIcon: {
-    fontSize: 20,
-    marginRight: 6,
-  },
   coinBalanceText: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -524,7 +503,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  imageContainer: {
+  iconContainer: {
     width: 80,
     height: 80,
     justifyContent: 'center',
@@ -534,11 +513,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 2,
     borderColor: '#C8E6C9',
-    padding: 8,
   },
-  itemImage: {
-    width: '100%',
-    height: '100%',
+  itemIcon: {
+    fontSize: 56,
   },
   itemDetails: {
     width: '100%',
@@ -585,7 +562,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#C8E6C9',
   },
-  modalImageContainer: {
+  modalIconContainer: {
     width: 120,
     height: 120,
     backgroundColor: '#F1F8E9',
@@ -595,11 +572,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 3,
     borderColor: '#66BB6A',
-    padding: 12,
   },
-  modalImage: {
-    width: '100%',
-    height: '100%',
+  modalIcon: {
+    fontSize: 72,
   },
   modalItemName: {
     fontSize: 24,
@@ -609,8 +584,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalCoinContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#F1F8E9',
     paddingHorizontal: 20,
     paddingVertical: 10,
@@ -618,10 +591,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 2,
     borderColor: '#66BB6A',
-  },
-  modalCoinIcon: {
-    fontSize: 20,
-    marginRight: 8,
   },
   modalCoinCost: {
     fontSize: 20,

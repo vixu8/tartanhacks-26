@@ -87,11 +87,7 @@ export default function HomeScreen() {
   const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.7;
   const backgroundImageSrc = "@/assets/images/tree-placeholder.png";
 
-  // Select a random fact when the component mounts (app opens)
   useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * SUSTAINABILITY_ITEMS.length);
-    setFactIndex(randomIndex);
-  }, []); // Empty dependency array means this runs once when component mounts
     // Set up real-time listener for events
     const unsubscribe = subscribeToEvents((events: DataItem[]) => {
       setActivities(events);
