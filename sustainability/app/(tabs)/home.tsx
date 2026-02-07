@@ -82,16 +82,11 @@ export default function HomeScreen() {
   const OUTER_SCROLL_THRESHOLD = SCREEN_HEIGHT * 0.7;
   const backgroundImageSrc = "@/assets/images/tree-placeholder.png";
 
+  // Select a random fact when the component mounts (app opens)
   useEffect(() => {
-    const interval = setInterval(() => {
-      setFactIndex((prev) => (prev + 1) % SUSTAINABILITY_ITEMS.length);
-      setVisible(true);
-      setExpanded(false);
-      setMinimized(false);
-    }, 20000);
-
-    return () => clearInterval(interval);
-  }, []);
+    const randomIndex = Math.floor(Math.random() * SUSTAINABILITY_ITEMS.length);
+    setFactIndex(randomIndex);
+  }, []); // Empty dependency array means this runs once when component mounts
 
   useEffect(() => {
     const listenerId = scrollY.addListener(({ value }) => {
