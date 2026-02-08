@@ -4,8 +4,8 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  apiKey: process.env.VITE_FIREBASE_API_KEY,
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: "sustainability-e6011",
   storageBucket: "sustainability-e6011.firebasestorage.app",
   messagingSenderId: "355407033623",
